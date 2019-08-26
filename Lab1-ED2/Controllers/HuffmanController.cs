@@ -3,15 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.IO;
 
 namespace Lab1_ED2.Controllers
 {
     public class HuffmanController : Controller
     {
-        // GET: Huffman
-        public ActionResult Index()
+        public ActionResult Importar()
         {
             return View();
+        }
+        [HttpPost]
+        public ActionResult Importar(HttpPostedFileBase ArchivoImportado)
+        {
+            string Rutaarchivo = string.Empty;
+            if (ArchivoImportado != null)
+            {
+                string Ruta = Server.MapPath("~/Uploads/");
+                if (!Directory.Exists(Ruta))
+                {
+                    Directory.CreateDirectory(Ruta);
+                }
+                Rutaarchivo = Ruta + Path.GetFileName(ArchivoImportado.FileName);
+                string extension = Path.GetExtension(ArchivoImportado.FileName);
+                ArchivoImportado.SaveAs(Rutaarchivo);
+                string csvData = System.IO.File.ReadAllText(Rutaarchivo);
+            }
+                return View();
         }
 
         // GET: Huffman/Details/5
