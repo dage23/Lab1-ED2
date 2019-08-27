@@ -31,142 +31,70 @@ namespace Lab1_ED2.Controllers
                 ArchivoImportado.SaveAs(Rutaarchivo);
                 string TextoArchivo = System.IO.File.ReadAllText(Rutaarchivo);
                 char[] ArregloTexto = TextoArchivo.ToCharArray();
-                var ListaCaracteres = new List<char>();
-                for (int i = 0; i < ArregloTexto.Length; i++)
+                //Crear Lista
+                CrearLista(ArregloTexto);
+                //Ordenamiento
+                OrdenarLista();
+            }
+            return View();
+        }        
+        #region CrearLista
+        void CrearLista(char[] ArregloTexto)
+        {
+            var ListaCaracteres = new List<char>();
+            for (int i = 0; i < ArregloTexto.Length; i++)
+            {
+                if (!(ListaCaracteres.Contains(ArregloTexto[i])))
                 {
-                    //    //
-                    //    if (Datos.Instance.ListaCaracteres.Count == 0)
-                    //    {
-                    //        var ClaseAuxiliar = new Caracter();
-                    //        ClaseAuxiliar.CaracterTexto = ArregloTexto[i];
-                    //        ClaseAuxiliar.Frecuencia = 0;
-                    //        Datos.Instance.ListaCaracteres.Add(ClaseAuxiliar);
-                    //        ListaCaracteres.Add(ArregloTexto[i]);
-                    //    }
-                    //    else
-                    //    {
-                    //        bool Esta = true;
-                    //        var ClaseAuxiliar = new Caracter();
-                    //        foreach (var item in Datos.Instance.ListaCaracteres)
-                    //        {
-                    //            if (item.CaracterTexto == ArregloTexto[i])
-                    //            {
-                    //                Esta = true;
-                    //                break;
-                    //            }
-                    //            else
-                    //                Esta = false;
-                    //        }
-                    //        if (!Esta)
-                    //        {
-                    //            ClaseAuxiliar.CaracterTexto = ArregloTexto[i];
-                    //            ClaseAuxiliar.Frecuencia = 0;
-                    //            Datos.Instance.ListaCaracteres.Add(ClaseAuxiliar);
-                    //        }
-                    //        //
-                    if (!(ListaCaracteres.Contains(ArregloTexto[i])))
-                    {
-                        ListaCaracteres.Add(ArregloTexto[i]);
-                    }
-
+                    ListaCaracteres.Add(ArregloTexto[i]);
                 }
-                var FrecuenciaCaracteres = new int[ListaCaracteres.Count];
-                for (int q = 0; q < FrecuenciaCaracteres.Length; q++)
+            }
+            var FrecuenciaCaracteres = new int[ListaCaracteres.Count];
+            for (int q = 0; q < FrecuenciaCaracteres.Length; q++)
+            {
+                FrecuenciaCaracteres[q] = 0;
+            }
+            for (int w = 0; w < ListaCaracteres.Count; w++)
+            {
+                char CaracterEvaluando = ListaCaracteres[w];
+                for (int j = 0; j < ArregloTexto.Length; j++)
                 {
-                    FrecuenciaCaracteres[q] = 0;
-                }
-
-                for (int w = 0; w < ListaCaracteres.Count; w++)
-                {
-                    char CaracterEvaluando = ListaCaracteres[w];
-                    for (int j = 0; j < ArregloTexto.Length; j++)
+                    if (CaracterEvaluando == ArregloTexto[j])
                     {
-                        if (CaracterEvaluando == ArregloTexto[j])
-                        {
-                            FrecuenciaCaracteres[w]++;
-                        }
+                        FrecuenciaCaracteres[w]++;
                     }
                 }
-                for (int i = 0; i < FrecuenciaCaracteres.Length; i++)
+            }
+            for (int i = 0; i < FrecuenciaCaracteres.Length; i++)
+            {
+                var ClaseAux = new Caracter();
+                ClaseAux.CaracterTexto = ListaCaracteres[i];
+                ClaseAux.Frecuencia = FrecuenciaCaracteres[i];
+                Datos.Instance.ListaCaracteresExistentes.Add(ClaseAux);
+            }
+        }
+        #endregion
+
+        #region OrdenarLista
+        void OrdenarLista()
+        {
+            for (int i = 0; i < Datos.Instance.ListaCaracteresExistentes.Count - 1; i++)
+            {
+                for (int j = 0; j < Datos.Instance.ListaCaracteresExistentes.Count - 1; j++)
                 {
-                    var ClaseAux = new Caracter();
-                    ClaseAux.CaracterTexto = ListaCaracteres[i];
-                    ClaseAux.Frecuencia = FrecuenciaCaracteres[i];
-                    Datos.Instance.ListaCaracteresExistentes.Add(ClaseAux);
+                    if (Datos.Instance.ListaCaracteresExistentes[j].Frecuencia > Datos.Instance.ListaCaracteresExistentes[j + 1].Frecuencia)
+                    {
+                        int temp = Datos.Instance.ListaCaracteresExistentes[j].Frecuencia;
+                        Datos.Instance.ListaCaracteresExistentes[j].Frecuencia = Datos.Instance.ListaCaracteresExistentes[j + 1].Frecuencia;
+                        Datos.Instance.ListaCaracteresExistentes[j + 1].Frecuencia = temp;
+
+                        char tempcChar = Datos.Instance.ListaCaracteresExistentes[j].CaracterTexto;
+                        Datos.Instance.ListaCaracteresExistentes[j].CaracterTexto = Datos.Instance.ListaCaracteresExistentes[j + 1].CaracterTexto;
+                        Datos.Instance.ListaCaracteresExistentes[j + 1].CaracterTexto = tempcChar;
+                    }
                 }
             }
-            return View();
         }
-        // GET: Huffman/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
-        }
-
-        // GET: Huffman/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Huffman/Create
-        [HttpPost]
-        public ActionResult Create(FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add insert logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: Huffman/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: Huffman/Edit/5
-        [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add update logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: Huffman/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: Huffman/Delete/5
-        [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add delete logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
+        #endregion
     }
 }
