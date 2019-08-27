@@ -5,11 +5,12 @@ using System.Web;
 using System.Web.Mvc;
 using System.IO;
 using Lab1_ED2.Models;
+using Lab1_ED2.Helper;
 namespace Lab1_ED2.Controllers
 {
     public class HuffmanController : Controller
     {
-        
+
         public ActionResult Importar()
         {
             return View();
@@ -33,33 +34,69 @@ namespace Lab1_ED2.Controllers
                 var ListaCaracteres = new List<char>();
                 for (int i = 0; i < ArregloTexto.Length; i++)
                 {
+                    //    //
+                    //    if (Datos.Instance.ListaCaracteres.Count == 0)
+                    //    {
+                    //        var ClaseAuxiliar = new Caracter();
+                    //        ClaseAuxiliar.CaracterTexto = ArregloTexto[i];
+                    //        ClaseAuxiliar.Frecuencia = 0;
+                    //        Datos.Instance.ListaCaracteres.Add(ClaseAuxiliar);
+                    //        ListaCaracteres.Add(ArregloTexto[i]);
+                    //    }
+                    //    else
+                    //    {
+                    //        bool Esta = true;
+                    //        var ClaseAuxiliar = new Caracter();
+                    //        foreach (var item in Datos.Instance.ListaCaracteres)
+                    //        {
+                    //            if (item.CaracterTexto == ArregloTexto[i])
+                    //            {
+                    //                Esta = true;
+                    //                break;
+                    //            }
+                    //            else
+                    //                Esta = false;
+                    //        }
+                    //        if (!Esta)
+                    //        {
+                    //            ClaseAuxiliar.CaracterTexto = ArregloTexto[i];
+                    //            ClaseAuxiliar.Frecuencia = 0;
+                    //            Datos.Instance.ListaCaracteres.Add(ClaseAuxiliar);
+                    //        }
+                    //        //
                     if (!(ListaCaracteres.Contains(ArregloTexto[i])))
                     {
                         ListaCaracteres.Add(ArregloTexto[i]);
                     }
+
                 }
                 var FrecuenciaCaracteres = new int[ListaCaracteres.Count];
-                for (int i = 0; i < FrecuenciaCaracteres.Length; i++)
+                for (int q = 0; q < FrecuenciaCaracteres.Length; q++)
                 {
-                    FrecuenciaCaracteres[i] = 0;
+                    FrecuenciaCaracteres[q] = 0;
                 }
 
-                for (int i = 0; i < ListaCaracteres.Count; i++)
+                for (int w = 0; w < ListaCaracteres.Count; w++)
                 {
-                    char CaracterEvaluando = ListaCaracteres[i];
+                    char CaracterEvaluando = ListaCaracteres[w];
                     for (int j = 0; j < ArregloTexto.Length; j++)
                     {
-                        if (CaracterEvaluando==ArregloTexto[j])
+                        if (CaracterEvaluando == ArregloTexto[j])
                         {
-                            FrecuenciaCaracteres[i]++;
+                            FrecuenciaCaracteres[w]++;
                         }
                     }
                 }
-
+                for (int i = 0; i < FrecuenciaCaracteres.Length; i++)
+                {
+                    var ClaseAux = new Caracter();
+                    ClaseAux.CaracterTexto = ListaCaracteres[i];
+                    ClaseAux.Frecuencia = FrecuenciaCaracteres[i];
+                    Datos.Instance.ListaCaracteresExistentes.Add(ClaseAux);
+                }
             }
-                return View();
+            return View();
         }
-
         // GET: Huffman/Details/5
         public ActionResult Details(int id)
         {
