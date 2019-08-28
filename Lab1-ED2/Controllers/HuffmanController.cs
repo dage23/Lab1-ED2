@@ -10,7 +10,7 @@ namespace Lab1_ED2.Controllers
 {
     public class HuffmanController : Controller
     {
-
+        public static int TotalDeCaracteres;
         public ActionResult Importar()
         {
             return View();
@@ -31,13 +31,14 @@ namespace Lab1_ED2.Controllers
                 ArchivoImportado.SaveAs(Rutaarchivo);
                 string TextoArchivo = System.IO.File.ReadAllText(Rutaarchivo);
                 char[] ArregloTexto = TextoArchivo.ToCharArray();
+                TotalDeCaracteres = ArregloTexto.Length;
                 //Crear Lista
                 CrearLista(ArregloTexto);
                 //Ordenamiento
                 OrdenarLista();
             }
             return View();
-        }        
+        }
         #region CrearLista
         void CrearLista(char[] ArregloTexto)
         {
@@ -96,5 +97,20 @@ namespace Lab1_ED2.Controllers
             }
         }
         #endregion
+
+        #region CrearListaDeNodos
+        void CrearListaDeNodos()
+        {
+            int CantTotalCaracteres = Datos.Instance.ListaCaracteresExistentes.Count;
+            for (int i = 0; i < CantTotalCaracteres; i++)
+            {
+                Nodo NodoAux = new Nodo();
+                NodoAux.caracter = Datos.Instance.ListaCaracteresExistentes.ElementAt(i);
+                NodoAux.probabilidad = NodoAux.caracter.Frecuencia / TotalDeCaracteres;
+                ArbolH.Instance.ListaNodosArbol.Add(NodoAux);
+            }
+        }
+        #endregion
     }
 }
+
