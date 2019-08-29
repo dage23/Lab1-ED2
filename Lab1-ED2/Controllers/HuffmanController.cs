@@ -111,6 +111,30 @@ namespace Lab1_ED2.Controllers
             }
         }
         #endregion
+
+        #region ArmarArbol
+        void ArmarArbol()
+        {
+            Comparar MetodoCopara = new Comparar();
+            ArbolH.Instance.ListaNodosArbol.Sort(MetodoCopara); //ordena la lista de mayor a menor
+            while (ArbolH.Instance.ListaNodosArbol[1]!=null)
+            {
+                int TamanoLista = ArbolH.Instance.ListaNodosArbol.Count;
+                Nodo auxPadre = new Nodo();
+                Nodo auxIzq = ArbolH.Instance.ListaNodosArbol[TamanoLista - 1];
+                Nodo auxDcha = ArbolH.Instance.ListaNodosArbol[TamanoLista - 2];
+                auxPadre.probabilidad = auxIzq.probabilidad + auxDcha.probabilidad;
+                auxPadre.NodoHijoDcha = auxDcha;
+                auxPadre.NodoHijoIzq = auxIzq;
+                auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
+                auxPadre.NodoHijoDcha.NodoPadre = auxPadre;
+
+                ArbolH.Instance.ListaNodosArbol[TamanoLista - 2] = auxPadre;
+                ArbolH.Instance.ListaNodosArbol.RemoveAt(TamanoLista - 1);
+            }
+        }
+        #endregion
     }
+
 }
 
