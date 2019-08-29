@@ -36,6 +36,12 @@ namespace Lab1_ED2.Controllers
                 CrearLista(ArregloTexto);
                 //Ordenamiento
                 OrdenarLista();
+                //Crear Lista de Nodos
+                CrearListaDeNodos();
+                //Armar Arbol
+                ArmarArbol();
+                //Crear Diccionario
+                Diccionario();
             }
             return View();
         }
@@ -104,10 +110,12 @@ namespace Lab1_ED2.Controllers
             int CantTotalCaracteres = Datos.Instance.ListaCaracteresExistentes.Count;
             for (int i = 0; i < CantTotalCaracteres; i++)
             {
-                Nodo NodoAux = new Nodo();
-                NodoAux.caracter = Datos.Instance.ListaCaracteresExistentes.ElementAt(i);
-                NodoAux.probabilidad = NodoAux.caracter.Frecuencia / TotalDeCaracteres;
-                ArbolH.Instance.ListaNodosArbol.Add(NodoAux);
+                Nodo NodoAux = new Nodo
+                {
+                    caracter = Datos.Instance.ListaCaracteresExistentes.ElementAt(i)
+                };
+                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / Convert.ToDouble(TotalDeCaracteres);
+                Datos.Instance.ListaNodosArbol.Add(NodoAux);
             }
         }
         #endregion
@@ -115,37 +123,44 @@ namespace Lab1_ED2.Controllers
         #region ArmarArbol
         void ArmarArbol()
         {
-            Comparar MetodoCopara = new Comparar();
-            ArbolH.Instance.ListaNodosArbol.Sort(MetodoCopara); //ordena la lista de mayor a menor
-            while (ArbolH.Instance.ListaNodosArbol[1]!=null)
+            var MetodoCopara = new Datos.Comparar();
+            Datos.Instance.ListaNodosArbol.Sort(MetodoCopara); //ordena la lista de mayor a menor
+
+            try
             {
-                int TamanoLista = ArbolH.Instance.ListaNodosArbol.Count;
-                Nodo auxPadre = new Nodo();
-                Nodo auxIzq = ArbolH.Instance.ListaNodosArbol[TamanoLista - 1];
-                Nodo auxDcha = ArbolH.Instance.ListaNodosArbol[TamanoLista - 2];
-                auxPadre.probabilidad = auxIzq.probabilidad + auxDcha.probabilidad;
-                auxPadre.NodoHijoDcha = auxDcha;
-                auxPadre.NodoHijoIzq = auxIzq;
-                auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
-                auxPadre.NodoHijoDcha.NodoPadre = auxPadre;
+                while (Datos.Instance.ListaNodosArbol[1] != null)
+                {
+                    int TamanoLista = Datos.Instance.ListaNodosArbol.Count;
+                    Nodo auxPadre = new Nodo();
+                    Nodo auxIzq = Datos.Instance.ListaNodosArbol[TamanoLista - 1];
+                    Nodo auxDcha = Datos.Instance.ListaNodosArbol[TamanoLista - 2];
+                    auxPadre.probabilidad = auxIzq.probabilidad + auxDcha.probabilidad;
+                    auxPadre.NodoHijoDcha = auxDcha;
+                    auxPadre.NodoHijoIzq = auxIzq;
+                    auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
+                    auxPadre.NodoHijoDcha.NodoPadre = auxPadre;
 
-                ArbolH.Instance.ListaNodosArbol[TamanoLista - 2] = auxPadre;
-                ArbolH.Instance.ListaNodosArbol.RemoveAt(TamanoLista - 1);
+                    Datos.Instance.ListaNodosArbol[TamanoLista - 2] = auxPadre;
+                    Datos.Instance.ListaNodosArbol.RemoveAt(TamanoLista - 1);
+                }
             }
-            Nodo.Instance.NodoRaiz = ArbolH.Instance.ListaNodosArbol[0];
-            Nodo.Instance.NodoRaiz.enOrden(Nodo.Instance.NodoRaiz);
+            catch (Exception)
+            {
+
+                Datos.Instance.cNodoRaiz = Datos.Instance.ListaNodosArbol[0];
+                Datos.Instance.enOrden(Datos.Instance.cNodoRaiz);
+            }
         }
         #endregion
-
         #region crearDiccionario
-        void Diccionario ()
+        void Diccionario()
         {
-            //Buscar los nodos hoja y asignar el valor del indice en la lista de caracteres para cada caracter
-            //crear un diccionario a partir de eso
-
         }
-        #endregion
     }
-
+    #endregion
 }
+
+
+
+
 

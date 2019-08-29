@@ -126,6 +126,7 @@
     </Compile>
     <Compile Include="Helper\Datos.cs" />
     <Compile Include="Models\Caracter.cs" />
+    <Compile Include="Models\Nodo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

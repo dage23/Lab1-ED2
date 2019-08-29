@@ -19,48 +19,29 @@ namespace Lab1_ED2.Helper
             }
         }
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
-    }
-    public class ArbolH
-    {
-        private static ArbolH _instance = null;
-        public static ArbolH Instance
-        {
-            get
-            {
-                if (_instance == null) _instance = new ArbolH();
-                {
-                    return _instance;
-                }
-            }
-        }
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
-    }
-    public class Nodo
-    {
-        public Caracter caracter { get; set; }
-        public double probabilidad { get; set; }
-        public Nodo NodoPadre;
-        public Nodo NodoHijoDcha;
-        public Nodo NodoHijoIzq;
-        public string indice;
-        private static Nodo _instance = null;
-        public static Nodo Instance
+        public class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
         {
-            get
+            public int Compare(Nodo N1, Nodo N2)
             {
-                if (_instance == null) _instance = new Nodo();
+                double x = N1.probabilidad;
+                double y = N2.probabilidad;
+                if (x == 0 || y == 0)
                 {
-                    return _instance;
+                    return 0;
                 }
+                return y.CompareTo(x);
+
             }
         }
-        public Nodo NodoRaiz = new Nodo();
+        public Nodo cNodo;
+        public Nodo cNodoRaiz;
         public void enOrden(Nodo nNodo)
         {
             if (nNodo != null)
             {
                 enOrden(nNodo.NodoHijoIzq);
-                if(nNodo.NodoPadre!=null)
+                if (nNodo.NodoPadre != null)
                 {
                     if (nNodo.NodoPadre.NodoPadre != null)
                     {
@@ -79,19 +60,6 @@ namespace Lab1_ED2.Helper
                 }
             }
         }
-    }
-    class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
-    {
-        public int Compare(Nodo N1, Nodo N2)
-        {
-            double x = N1.probabilidad;
-            double y = N2.probabilidad;
-            if (x == 0 || y == 0)
-            {
-                return 0;
-            }
-            return y.CompareTo(x);
-
-        }
+        public Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
     }
 }
