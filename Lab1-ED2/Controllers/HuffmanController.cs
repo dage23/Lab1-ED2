@@ -132,6 +132,17 @@ namespace Lab1_ED2.Controllers
                 ArbolH.Instance.ListaNodosArbol[TamanoLista - 2] = auxPadre;
                 ArbolH.Instance.ListaNodosArbol.RemoveAt(TamanoLista - 1);
             }
+            Nodo.Instance.NodoRaiz = ArbolH.Instance.ListaNodosArbol[0];
+            Nodo.Instance.NodoRaiz.enOrden(Nodo.Instance.NodoRaiz);
+        }
+        #endregion
+
+        #region crearDiccionario
+        void Diccionario ()
+        {
+            //Buscar los nodos hoja y asignar el valor del indice en la lista de caracteres para cada caracter
+            //crear un diccionario a partir de eso
+
         }
         #endregion
     }

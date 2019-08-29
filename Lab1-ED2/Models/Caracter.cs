@@ -9,7 +9,7 @@ namespace Lab1_ED2.Models
     {
         public char CaracterTexto { get; set; }
         public int Frecuencia { get; set; }
-
+        public int indice { get; set; }
         public int CompareTo(object obj)
         {
             var vComparador = (Caracter)obj;
