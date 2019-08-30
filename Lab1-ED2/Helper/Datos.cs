@@ -18,8 +18,7 @@ namespace Lab1_ED2.Helper
                 }
             }
         }
-        public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
-        public List<Nodo> ListaNodosArbol = new List<Nodo>();
+        //public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
         {
             public int Compare(Nodo N1, Nodo N2)
@@ -34,13 +33,12 @@ namespace Lab1_ED2.Helper
 
             }
         }
-        public Nodo cNodo;
-        public Nodo cNodoRaiz;
+        //public Nodo cNodo;
+        //public Nodo cNodoRaiz;
         public void enOrden(Nodo nNodo)
         {
             if (nNodo != null)
             {
-                enOrden(nNodo.NodoHijoIzq);
                 if (nNodo.NodoPadre != null)
                 {
                     if (nNodo.NodoPadre.NodoPadre != null)
@@ -49,7 +47,8 @@ namespace Lab1_ED2.Helper
                     }
                     else nNodo.indice = "0";
                 }
-                enOrden(nNodo.NodoHijoDcha);
+                enOrden(nNodo.NodoHijoIzq);
+
                 if (nNodo.NodoPadre != null)
                 {
                     if (nNodo.NodoPadre.NodoPadre != null)
@@ -58,6 +57,8 @@ namespace Lab1_ED2.Helper
                     }
                     else nNodo.indice = "1";
                 }
+                enOrden(nNodo.NodoHijoDcha);
+                
             }
         }
         public Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();

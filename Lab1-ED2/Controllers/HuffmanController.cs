@@ -10,7 +10,12 @@ namespace Lab1_ED2.Controllers
 {
     public class HuffmanController : Controller
     {
+        public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
+        public List<Nodo> ListaNodosArbol = new List<Nodo>();
+        public Nodo cNodo;
+        public Nodo cNodoRaiz;
         public static int TotalDeCaracteres;
+
         public ActionResult Importar()
         {
             return View();
@@ -18,7 +23,12 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult Importar(HttpPostedFileBase ArchivoImportado)
         {
-            string Rutaarchivo = string.Empty;
+            var ListaCaracteresExistentes = new List<Caracter>();
+       
+            var ListaNodosArbol = new List<Nodo>();
+
+
+        string Rutaarchivo = string.Empty;
             if (ArchivoImportado != null)
             {
                 string Ruta = Server.MapPath("~/Uploads/");
@@ -77,7 +87,7 @@ namespace Lab1_ED2.Controllers
                 var ClaseAux = new Caracter();
                 ClaseAux.CaracterTexto = ListaCaracteres[i];
                 ClaseAux.Frecuencia = FrecuenciaCaracteres[i];
-                Datos.Instance.ListaCaracteresExistentes.Add(ClaseAux);
+                ListaCaracteresExistentes.Add(ClaseAux);
             }
         }
         #endregion
@@ -85,19 +95,19 @@ namespace Lab1_ED2.Controllers
         #region OrdenarLista
         void OrdenarLista()
         {
-            for (int i = 0; i < Datos.Instance.ListaCaracteresExistentes.Count - 1; i++)
+            for (int i = 0; i < ListaCaracteresExistentes.Count - 1; i++)
             {
-                for (int j = 0; j < Datos.Instance.ListaCaracteresExistentes.Count - 1; j++)
+                for (int j = 0; j < ListaCaracteresExistentes.Count - 1; j++)
                 {
-                    if (Datos.Instance.ListaCaracteresExistentes[j].Frecuencia > Datos.Instance.ListaCaracteresExistentes[j + 1].Frecuencia)
+                    if (ListaCaracteresExistentes[j].Frecuencia > ListaCaracteresExistentes[j + 1].Frecuencia)
                     {
-                        int temp = Datos.Instance.ListaCaracteresExistentes[j].Frecuencia;
-                        Datos.Instance.ListaCaracteresExistentes[j].Frecuencia = Datos.Instance.ListaCaracteresExistentes[j + 1].Frecuencia;
-                        Datos.Instance.ListaCaracteresExistentes[j + 1].Frecuencia = temp;
+                        int temp = ListaCaracteresExistentes[j].Frecuencia;
+                        ListaCaracteresExistentes[j].Frecuencia = ListaCaracteresExistentes[j + 1].Frecuencia;
+                        ListaCaracteresExistentes[j + 1].Frecuencia = temp;
 
-                        char tempcChar = Datos.Instance.ListaCaracteresExistentes[j].CaracterTexto;
-                        Datos.Instance.ListaCaracteresExistentes[j].CaracterTexto = Datos.Instance.ListaCaracteresExistentes[j + 1].CaracterTexto;
-                        Datos.Instance.ListaCaracteresExistentes[j + 1].CaracterTexto = tempcChar;
+                        char tempcChar = ListaCaracteresExistentes[j].CaracterTexto;
+                        ListaCaracteresExistentes[j].CaracterTexto = ListaCaracteresExistentes[j + 1].CaracterTexto;
+                        ListaCaracteresExistentes[j + 1].CaracterTexto = tempcChar;
                     }
                 }
             }
@@ -107,15 +117,15 @@ namespace Lab1_ED2.Controllers
         #region CrearListaDeNodos
         void CrearListaDeNodos()
         {
-            int CantTotalCaracteres = Datos.Instance.ListaCaracteresExistentes.Count;
+            int CantTotalCaracteres = ListaCaracteresExistentes.Count;
             for (int i = 0; i < CantTotalCaracteres; i++)
             {
                 Nodo NodoAux = new Nodo
                 {
-                    caracter = Datos.Instance.ListaCaracteresExistentes.ElementAt(i)
+                    caracter = ListaCaracteresExistentes.ElementAt(i)
                 };
                 NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / Convert.ToDouble(TotalDeCaracteres);
-                Datos.Instance.ListaNodosArbol.Add(NodoAux);
+                ListaNodosArbol.Add(NodoAux);
             }
         }
         #endregion
@@ -124,31 +134,32 @@ namespace Lab1_ED2.Controllers
         void ArmarArbol()
         {
             var MetodoCopara = new Datos.Comparar();
-            Datos.Instance.ListaNodosArbol.Sort(MetodoCopara); //ordena la lista de mayor a menor
-
+            ListaNodosArbol.Sort(MetodoCopara); //ordena la lista de mayor a menor
+            int TamanoLista = ListaNodosArbol.Count;
             try
             {
-                while (Datos.Instance.ListaNodosArbol[1] != null)
+                while (ListaNodosArbol[1] != null)
                 {
-                    int TamanoLista = Datos.Instance.ListaNodosArbol.Count;
+
                     Nodo auxPadre = new Nodo();
-                    Nodo auxIzq = Datos.Instance.ListaNodosArbol[TamanoLista - 1];
-                    Nodo auxDcha = Datos.Instance.ListaNodosArbol[TamanoLista - 2];
+                    Nodo auxIzq =ListaNodosArbol[TamanoLista - 1];
+                    Nodo auxDcha = ListaNodosArbol[TamanoLista - 2];
                     auxPadre.probabilidad = auxIzq.probabilidad + auxDcha.probabilidad;
                     auxPadre.NodoHijoDcha = auxDcha;
                     auxPadre.NodoHijoIzq = auxIzq;
                     auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
                     auxPadre.NodoHijoDcha.NodoPadre = auxPadre;
 
-                    Datos.Instance.ListaNodosArbol[TamanoLista - 2] = auxPadre;
-                    Datos.Instance.ListaNodosArbol.RemoveAt(TamanoLista - 1);
+                    ListaNodosArbol[TamanoLista - 2] = auxPadre;
+                    ListaNodosArbol.RemoveAt(TamanoLista - 1);
+                    TamanoLista = ListaNodosArbol.Count;
                 }
             }
             catch (Exception)
             {
 
-                Datos.Instance.cNodoRaiz = Datos.Instance.ListaNodosArbol[0];
-                Datos.Instance.enOrden(Datos.Instance.cNodoRaiz);
+                cNodoRaiz = ListaNodosArbol[0];
+                Datos.Instance.enOrden(cNodoRaiz);
             }
         }
         #endregion
@@ -156,8 +167,24 @@ namespace Lab1_ED2.Controllers
         void Diccionario()
         {
         }
+        #endregion
+
+        public class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
+        {
+            public int Compare(Nodo N1, Nodo N2)
+            {
+                double x = N1.probabilidad;
+                double y = N2.probabilidad;
+                if (x == 0 || y == 0)
+                {
+                    return 0;
+                }
+                return y.CompareTo(x);
+
+            }
+        }
+
     }
-    #endregion
 }
 
 
