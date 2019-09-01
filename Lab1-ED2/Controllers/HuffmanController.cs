@@ -12,7 +12,6 @@ namespace Lab1_ED2.Controllers
     {
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
-        public Nodo cNodo;
         public Nodo cNodoRaiz;
         public static int TotalDeCaracteres;
 
@@ -133,16 +132,16 @@ namespace Lab1_ED2.Controllers
         #region ArmarArbol
         void ArmarArbol()
         {
-            var MetodoCopara = new Datos.Comparar();
-            ListaNodosArbol.Sort(MetodoCopara); //ordena la lista de mayor a menor
+            var MetodoCopara = new Comparar();
+            //ordena la lista de mayor a menor
             int TamanoLista = ListaNodosArbol.Count;
             try
             {
                 while (ListaNodosArbol[1] != null)
                 {
-
+                    ListaNodosArbol.Sort(MetodoCopara);
                     Nodo auxPadre = new Nodo();
-                    Nodo auxIzq =ListaNodosArbol[TamanoLista - 1];
+                    Nodo auxIzq = ListaNodosArbol[TamanoLista - 1];
                     Nodo auxDcha = ListaNodosArbol[TamanoLista - 2];
                     auxPadre.probabilidad = auxIzq.probabilidad + auxDcha.probabilidad;
                     auxPadre.NodoHijoDcha = auxDcha;
@@ -157,12 +156,12 @@ namespace Lab1_ED2.Controllers
             }
             catch (Exception)
             {
-
                 cNodoRaiz = ListaNodosArbol[0];
-                Datos.Instance.enOrden(cNodoRaiz);
+                cNodoRaiz.enOrden(cNodoRaiz);
             }
         }
-        #endregion
+        #endregion 
+
         #region crearDiccionario
         void Diccionario()
         {
