@@ -14,7 +14,8 @@ namespace Lab1_ED2.Controllers
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
         public Nodo cNodoRaiz;
         public static int TotalDeCaracteres;
-
+        public string diccionario;
+        public static Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
         public ActionResult Importar()
         {
             return View();
@@ -50,7 +51,6 @@ namespace Lab1_ED2.Controllers
                 //Armar Arbol
                 ArmarArbol();
                 //Crear Diccionario
-                Diccionario();
             }
             return View();
         }
@@ -158,13 +158,24 @@ namespace Lab1_ED2.Controllers
             {
                 cNodoRaiz = ListaNodosArbol[0];
                 cNodoRaiz.enOrden(cNodoRaiz);
+                Diccionario(cNodoRaiz);
             }
         }
         #endregion 
 
         #region crearDiccionario
-        void Diccionario()
+        void Diccionario(Nodo nNodo)
         {
+            if (nNodo != null)
+            {
+                if (nNodo.NodoHijoIzq == null)
+                {
+                    diccionario += nNodo.caracter.CaracterTexto + nNodo.indice.ToString() + "|";
+                    DiccionarioIndices.Add(nNodo.indice, nNodo.caracter.CaracterTexto);
+                }
+                Diccionario(nNodo.NodoHijoIzq);
+                Diccionario(nNodo.NodoHijoDcha);
+            }
         }
         #endregion
 
