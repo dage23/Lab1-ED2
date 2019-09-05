@@ -20,6 +20,7 @@ namespace Lab1_ED2.Controllers
         public string diccionario;
         public Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
         public string TextoBinarioTRY = "";
+        public string[] nombreArchivo;
         public ActionResult Importar()
         {
             return View();
@@ -27,6 +28,7 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult Importar(HttpPostedFileBase ArchivoImportado)
         {
+            nombreArchivo = (ArchivoImportado.FileName).Split('.');
             using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
             {
                 var byteBuffer = new byte[bufferLength];
@@ -45,25 +47,61 @@ namespace Lab1_ED2.Controllers
             ArmarArbol();
             //Traducir A Binario
             TradBinario();
-            var byteBuffer2 = new byte[bufferLength];
             while (TextoBinarioTRY.Length % 8 != 0)
             {
                 TextoBinarioTRY += "0";
             }
-            var contador=0;
-            var TextoenByte="";
-            for(int i=0;i<TextoBinarioTRY.Length;i++)
+            //Escritura Huffman
+            using (var writeStream = new FileStream("C://Users//allan//Downloads//" + nombreArchivo[0] + ".huff", FileMode.OpenOrCreate))
             {
-                contador++;
-                TextoenByte+=TextoBinarioTRY[i];
-                if (contador==8)
+                using (var writer = new StreamWriter(writeStream))
                 {
-                    var TextoDecimal=Convert.ToInt32(TextoenByte,2);
-                    var TextoAscii = Convert.ToChar(TextoDecimal);
-                    contador=0;
-                    TextoenByte = "";
+                    writer.WriteLine(TotalDeCaracteres.ToString());
+                    var byteBuffer2 = new int[bufferLength];
+                    var contadorBits = 0;
+                    var contadorCaracteres = 0;
+                    var contadorBuffer = 0;
+                    var contador = 0;
+                    var TextoenByte = "";
+                    while (contador != TextoBinarioTRY.Length)
+                    {
+                        TextoenByte += TextoBinarioTRY[contador];
+                        contadorBits++;
+
+                        if (contadorBits == 8)
+                        {
+                            if (contadorCaracteres <= bufferLength)
+                            {
+                                var Caracteres = new char[bufferLength];
+                                for (int i = 0; i < bufferLength; i++)
+                                {
+                                    Caracteres[i] = Convert.ToChar(byteBuffer2[i]);
+                                }
+                                for (int i = 0; i < bufferLength; i++)
+                                {
+                                    writer.Write(Caracteres[i]);
+                                }
+
+                                byteBuffer2 = new int[bufferLength];
+                                contadorCaracteres = 0;
+                            }
+                            var TextoDecimal = Convert.ToInt32(TextoenByte, 2);
+                            byteBuffer2[contadorCaracteres] = TextoDecimal;
+                            contadorBuffer++;
+                            contadorCaracteres++;
+                            contadorBits = 0;
+                            TextoenByte = "";
+                        }
+                        contador++;
+                    }
+                    writer.WriteLine();
+                    foreach (var item in DiccionarioIndices)
+                    {
+                        writer.Write(Convert.ToString(item.Value) + "&" + item.Key + "|");
+                    }
                 }
             }
+
             return View();
         }
         #region CrearLista
@@ -107,7 +145,7 @@ namespace Lab1_ED2.Controllers
             int CantTotalCaracteres = ListaCaracteresFinales.Count;
             for (int i = 0; i < CantTotalCaracteres; i++)
             {
-                Nodo NodoAux = new Nodo
+                var NodoAux = new Nodo
                 {
                     caracter = ListaCaracteresFinales.ElementAt(i)
                 };
@@ -127,7 +165,7 @@ namespace Lab1_ED2.Controllers
                 while (ListaNodosArbol[1] != null)
                 {
                     ListaNodosArbol.Sort(MetodoCopara);
-                    Nodo auxPadre = new Nodo();
+                    var auxPadre = new Nodo();
                     Nodo auxIzq = ListaNodosArbol[TamanoLista - 1];
                     Nodo auxDcha = ListaNodosArbol[TamanoLista - 2];
                     auxPadre.probabilidad = Convert.ToDouble(auxIzq.probabilidad) + Convert.ToDouble(auxDcha.probabilidad);
