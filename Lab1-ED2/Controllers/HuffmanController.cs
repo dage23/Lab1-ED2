@@ -50,6 +50,20 @@ namespace Lab1_ED2.Controllers
             {
                 TextoBinarioTRY += "0";
             }
+            var contador=0;
+            var TextoenByte="";
+            for(int i=0;i<TextoBinarioTRY.Length;i++)
+            {
+                contador++;
+                TextoenByte+=TextoBinarioTRY[i];
+                if (contador==8)
+                {
+                    var TextoDecimal=Convert.ToInt32(TextoenByte,2);
+                    var TextoAscii = Convert.ToChar(TextoDecimal);
+                    contador=0;
+                    TextoenByte = "";
+                }
+            }
             return View();
         }
         #region CrearLista
