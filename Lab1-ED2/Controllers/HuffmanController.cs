@@ -4,18 +4,22 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.IO;
+using System.Text;
 using Lab1_ED2.Models;
 using Lab1_ED2.Helper;
 namespace Lab1_ED2.Controllers
 {
     public class HuffmanController : Controller
     {
+        const int bufferLength = 10;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
+        public List<Caracter> ListaCaracteresFinales = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
         public Nodo cNodoRaiz;
-        public static int TotalDeCaracteres;
+        public int TotalDeCaracteres;
         public string diccionario;
-        public static Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
+        public Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
+        public string TextoBinarioTRY = "";
         public ActionResult Importar()
         {
             return View();
@@ -23,112 +27,81 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult Importar(HttpPostedFileBase ArchivoImportado)
         {
-            var ListaCaracteresExistentes = new List<Caracter>();
-       
-            var ListaNodosArbol = new List<Nodo>();
-
-
-        string Rutaarchivo = string.Empty;
-            if (ArchivoImportado != null)
+            using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
             {
-                string Ruta = Server.MapPath("~/Uploads/");
-                if (!Directory.Exists(Ruta))
+                var byteBuffer = new byte[bufferLength];
+                while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                 {
-                    Directory.CreateDirectory(Ruta);
+                    byteBuffer = Lectura.ReadBytes(bufferLength);
+                    var result = Encoding.UTF8.GetChars(byteBuffer);
+                    IntroducirALista(result);
                 }
-                Rutaarchivo = Ruta + Path.GetFileName(ArchivoImportado.FileName);
-                string extension = Path.GetExtension(ArchivoImportado.FileName);
-                ArchivoImportado.SaveAs(Rutaarchivo);
-                string TextoArchivo = System.IO.File.ReadAllText(Rutaarchivo);
-                char[] ArregloTexto = TextoArchivo.ToCharArray();
-                TotalDeCaracteres = ArregloTexto.Length;
-                //Crear Lista
-                CrearLista(ArregloTexto);
-                //Ordenamiento
-                OrdenarLista();
-                //Crear Lista de Nodos
-                CrearListaDeNodos();
-                //Armar Arbol
-                ArmarArbol();
-                //Crear Diccionario
+            }
+            TotalDeCaracteres = ListaCaracteresExistentes.Count();
+            SUma();
+            //Crear Lista de Nodos
+            CrearListaDeNodos();
+            //Armar Arbol
+            ArmarArbol();
+            //Traducir A Binario
+            TradBinario();
+            var byteBuffer2 = new byte[bufferLength];
+            while (TextoBinarioTRY.Length % 8 != 0)
+            {
+                TextoBinarioTRY += "0";
             }
             return View();
         }
         #region CrearLista
-        void CrearLista(char[] ArregloTexto)
+        void IntroducirALista(char[] CaracteresAux)
         {
-            var ListaCaracteres = new List<char>();
-            for (int i = 0; i < ArregloTexto.Length; i++)
-            {
-                if (!(ListaCaracteres.Contains(ArregloTexto[i])))
-                {
-                    ListaCaracteres.Add(ArregloTexto[i]);
-                }
-            }
-            var FrecuenciaCaracteres = new int[ListaCaracteres.Count];
-            for (int q = 0; q < FrecuenciaCaracteres.Length; q++)
-            {
-                FrecuenciaCaracteres[q] = 0;
-            }
-            for (int w = 0; w < ListaCaracteres.Count; w++)
-            {
-                char CaracterEvaluando = ListaCaracteres[w];
-                for (int j = 0; j < ArregloTexto.Length; j++)
-                {
-                    if (CaracterEvaluando == ArregloTexto[j])
-                    {
-                        FrecuenciaCaracteres[w]++;
-                    }
-                }
-            }
-            for (int i = 0; i < FrecuenciaCaracteres.Length; i++)
+            for (int i = 0; i < CaracteresAux.Length; i++)
             {
                 var ClaseAux = new Caracter();
-                ClaseAux.CaracterTexto = ListaCaracteres[i];
-                ClaseAux.Frecuencia = FrecuenciaCaracteres[i];
+                ClaseAux.CaracterTexto = CaracteresAux[i];
+                ClaseAux.Frecuencia = 1;
                 ListaCaracteresExistentes.Add(ClaseAux);
             }
         }
-        #endregion
-
-        #region OrdenarLista
-        void OrdenarLista()
+        void SUma()
         {
-            for (int i = 0; i < ListaCaracteresExistentes.Count - 1; i++)
+            for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
             {
-                for (int j = 0; j < ListaCaracteresExistentes.Count - 1; j++)
+                for (int j = 0; j < ListaCaracteresExistentes.Count; j++)
                 {
-                    if (ListaCaracteresExistentes[j].Frecuencia > ListaCaracteresExistentes[j + 1].Frecuencia)
+                    if (ListaCaracteresExistentes[i].CaracterTexto == ListaCaracteresExistentes[j].CaracterTexto && !ListaCaracteresExistentes[j].Recorrido)
                     {
-                        int temp = ListaCaracteresExistentes[j].Frecuencia;
-                        ListaCaracteresExistentes[j].Frecuencia = ListaCaracteresExistentes[j + 1].Frecuencia;
-                        ListaCaracteresExistentes[j + 1].Frecuencia = temp;
-
-                        char tempcChar = ListaCaracteresExistentes[j].CaracterTexto;
-                        ListaCaracteresExistentes[j].CaracterTexto = ListaCaracteresExistentes[j + 1].CaracterTexto;
-                        ListaCaracteresExistentes[j + 1].CaracterTexto = tempcChar;
+                        ListaCaracteresExistentes[i].Frecuencia += 1;
+                        ListaCaracteresExistentes[i].Tomar = true;
+                        ListaCaracteresExistentes[j].Recorrido = true;
                     }
+
+                }
+            }
+            for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
+            {
+                if (ListaCaracteresExistentes[i].Tomar)
+                {
+                    ListaCaracteresFinales.Add(ListaCaracteresExistentes[i]);
                 }
             }
         }
         #endregion
-
         #region CrearListaDeNodos
         void CrearListaDeNodos()
         {
-            int CantTotalCaracteres = ListaCaracteresExistentes.Count;
+            int CantTotalCaracteres = ListaCaracteresFinales.Count;
             for (int i = 0; i < CantTotalCaracteres; i++)
             {
                 Nodo NodoAux = new Nodo
                 {
-                    caracter = ListaCaracteresExistentes.ElementAt(i)
+                    caracter = ListaCaracteresFinales.ElementAt(i)
                 };
-                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / Convert.ToDouble(TotalDeCaracteres);
+                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / (CantTotalCaracteres);
                 ListaNodosArbol.Add(NodoAux);
             }
         }
         #endregion
-
         #region ArmarArbol
         void ArmarArbol()
         {
@@ -143,7 +116,7 @@ namespace Lab1_ED2.Controllers
                     Nodo auxPadre = new Nodo();
                     Nodo auxIzq = ListaNodosArbol[TamanoLista - 1];
                     Nodo auxDcha = ListaNodosArbol[TamanoLista - 2];
-                    auxPadre.probabilidad = auxIzq.probabilidad + auxDcha.probabilidad;
+                    auxPadre.probabilidad = Convert.ToDouble(auxIzq.probabilidad) + Convert.ToDouble(auxDcha.probabilidad);
                     auxPadre.NodoHijoDcha = auxDcha;
                     auxPadre.NodoHijoIzq = auxIzq;
                     auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
@@ -162,7 +135,6 @@ namespace Lab1_ED2.Controllers
             }
         }
         #endregion 
-
         #region crearDiccionario
         void Diccionario(Nodo nNodo)
         {
@@ -178,7 +150,7 @@ namespace Lab1_ED2.Controllers
             }
         }
         #endregion
-
+        #region MetodoOrdenarNodos
         public class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
         {
             public int Compare(Nodo N1, Nodo N2)
@@ -193,10 +165,25 @@ namespace Lab1_ED2.Controllers
 
             }
         }
-
+        #endregion
+        #region TraductorABinario
+        void TradBinario()
+        {
+            for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
+            {
+                foreach (var item in DiccionarioIndices)
+                {
+                    if (item.Value == ListaCaracteresExistentes[i].CaracterTexto)
+                    {
+                        TextoBinarioTRY += item.Key;
+                        ListaCaracteresExistentes[i].binarioText = item.Key;
+                    }
+                }
+            }
+        }
+        #endregion
     }
 }
-
 
 
 
