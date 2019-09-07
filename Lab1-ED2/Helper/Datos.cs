@@ -7,21 +7,17 @@ namespace Lab1_ED2.Helper
 {
     public class Datos
     {
-       
-        public class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
+        private static Datos _instance = null;
+        public static Datos Instance
         {
-            public int Compare(Nodo N1, Nodo N2)
+            get
             {
-                double x = N1.probabilidad;
-                double y = N2.probabilidad;
-                if (x == 0 || y == 0)
+                if (_instance == null) _instance = new Datos();
                 {
-                    return 0;
+                    return _instance;
                 }
-                return y.CompareTo(x);
-
             }
         }
-        
+        public Stack<PropiedadesArchivo> PilaArchivosComprimidos = new Stack<PropiedadesArchivo>();
     }
 }

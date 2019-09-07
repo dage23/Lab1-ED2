@@ -1,0 +1,54 @@
+﻿@model IEnumerable<Lab1_ED2.Models.PropiedadesArchivo>
+
+@{
+    ViewBag.Title = "VerMisCompresiones";
+}
+
+<h2>Mis Compresiones</h2>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.NombreArchivoOriginal)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TamanoArchivoDescomprimido)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TamanoArchivoComprimido)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.RazonCompresion)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.FactorCompresion)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.PorcentajeReduccion)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.NombreArchivoOriginal)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TamanoArchivoDescomprimido)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TamanoArchivoComprimido)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.RazonCompresion)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.FactorCompresion)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.PorcentajeReduccion)
+        </td>
+    </tr>
+}
+
+</table>

@@ -17,26 +17,49 @@ namespace Lab1_ED2.Controllers
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
         public Nodo cNodoRaiz;
         public int TotalDeCaracteres;
-        //public string diccionario;
-        public Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
+        public Dictionary<string, byte> DiccionarioIndices = new Dictionary<string, byte>();
         public string TextoEnBinario = "";
-        public string[] nombreArchivo;
-        public ActionResult Importar()
+        public string nombreArchivo;
+
+        public ActionResult Menu()
+        {
+            return View();
+        }
+        public ActionResult VerMisCompresiones()
+        {
+            return View(Datos.Instance.PilaArchivosComprimidos);
+        }
+        public ActionResult MenuHuffman()
+        {
+            return View();
+        }
+        public ActionResult CompresionHImportar()
         {
             return View();
         }
         [HttpPost]
-        public ActionResult Importar(HttpPostedFileBase ArchivoImportado)
+        public ActionResult CompresionHImportar(HttpPostedFileBase ArchivoImportado)
         {
-            nombreArchivo = (ArchivoImportado.FileName).Split('.');
+            string archivoLeer = string.Empty;
+            string ArchivoMapeo = Server.MapPath("~/App_Data/");
+            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+            string extension = Path.GetExtension(ArchivoImportado.FileName);
+            ArchivoImportado.SaveAs(archivoLeer);
+            //Obtener propiedades del archivo
+            var PropiedadesArchivoActual = new PropiedadesArchivo();
+            FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+            PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
+            PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
+            nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
+            //Leer Archivo
             using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
             {
                 var byteBuffer = new byte[bufferLength];
                 while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                 {
                     byteBuffer = Lectura.ReadBytes(bufferLength);
-                    var result = Encoding.UTF8.GetChars(byteBuffer);
-                    IntroducirALista(result);
+                    //var result = Encoding.UTF8.GetChars(byteBuffer);
+                    IntroducirALista(byteBuffer);
                 }
             }
             TotalDeCaracteres = ListaCaracteresExistentes.Count();
@@ -52,15 +75,16 @@ namespace Lab1_ED2.Controllers
                 TextoEnBinario += "0";
             }
             //Escritura Huffman
-            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/" + nombreArchivo[0] + ".huff"), FileMode.OpenOrCreate))
+            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/" + nombreArchivo + ".huff"), FileMode.OpenOrCreate))
             {
                 using (var writer = new BinaryWriter(writeStream))
                 {
-                    writer.Write(nombreArchivo[1]);
-                    writer.Write((TotalDeCaracteres).ToString()+Environment.NewLine);
+                    writer.Write(ArchivoAnalizado.Name.ToCharArray());
+                    writer.Write((TotalDeCaracteres).ToString() + Environment.NewLine);
                     foreach (var item in DiccionarioIndices)
                     {
-                        writer.Write((item.Value).ToString() + "&" + item.Key + "|");
+                        var cosoPrueba = (Convert.ToInt32(item.Value));
+                        writer.Write(Convert.ToByte(cosoPrueba) + "&" + item.Key + "|");
                     }
                     writer.Write(Environment.NewLine);
                     var byteBuffer2 = new byte[bufferLength];
@@ -74,7 +98,7 @@ namespace Lab1_ED2.Controllers
                         contadorBits++;
                         if (contadorBits == 8)
                         {
-                            if (contadorBuffer==bufferLength)
+                            if (contadorBuffer == bufferLength)
                             {
                                 for (int i = 0; i < bufferLength; i++)
                                 {
@@ -93,7 +117,7 @@ namespace Lab1_ED2.Controllers
                                 contadorBuffer++;
                                 contadorBits = 0;
                                 TextoenByte = "";
-                                if (contador==TextoEnBinario.Length-1)
+                                if (contador == TextoEnBinario.Length - 1)
                                 {
                                     for (int i = 0; i < bufferLength; i++)
                                     {
@@ -102,15 +126,19 @@ namespace Lab1_ED2.Controllers
                                 }
                             }
                         }
-                         contador++;
+                        contador++;
                     }
-                    writer.Write(Environment.NewLine);
+                    PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
+                    PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
+                    PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
+                    PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
+                    Datos.Instance.PilaArchivosComprimidos.Push(PropiedadesArchivoActual);
                 }
             }
             return View();
         }
         #region CrearLista
-        void IntroducirALista(char[] CaracteresAux)
+        void IntroducirALista(byte[] CaracteresAux)
         {
             for (int i = 0; i < CaracteresAux.Length; i++)
             {
@@ -122,17 +150,21 @@ namespace Lab1_ED2.Controllers
         }
         void SumaCaracteres()
         {
-            for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
+            ListaCaracteresExistentes[0].CaracterAUsar = true;
+            if (ListaCaracteresExistentes.Count>1)
             {
-                for (int j = 0; j < ListaCaracteresExistentes.Count; j++)
+                for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
                 {
-                    if (ListaCaracteresExistentes[i].CaracterTexto == ListaCaracteresExistentes[j].CaracterTexto && !ListaCaracteresExistentes[j].CaracterYaRecorrido)
+                    for (int j = 1; j < ListaCaracteresExistentes.Count; j++)
                     {
-                        ListaCaracteresExistentes[i].Frecuencia += 1;
-                        ListaCaracteresExistentes[i].CaracterAUsar = true;
-                        ListaCaracteresExistentes[j].CaracterYaRecorrido = true;
-                    }
+                        if (ListaCaracteresExistentes[i].CaracterTexto == ListaCaracteresExistentes[j].CaracterTexto && !ListaCaracteresExistentes[j].CaracterYaRecorrido)
+                        {
+                            ListaCaracteresExistentes[i].Frecuencia += 1;
+                            ListaCaracteresExistentes[i].CaracterAUsar = true;
+                            ListaCaracteresExistentes[j].CaracterYaRecorrido = true;
+                        }
 
+                    }
                 }
             }
             for (int i = 0; i < ListaCaracteresExistentes.Count; i++)

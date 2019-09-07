@@ -7,7 +7,7 @@ namespace Lab1_ED2.Models
 {
     public class Caracter:IComparable
     {
-        public char CaracterTexto { get; set; }
+        public byte CaracterTexto { get; set; }
         public int Frecuencia { get; set; }
         public int indice { get; set; }
         public bool CaracterYaRecorrido = false;

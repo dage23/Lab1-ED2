@@ -127,6 +127,7 @@
     <Compile Include="Helper\Datos.cs" />
     <Compile Include="Models\Caracter.cs" />
     <Compile Include="Models\Nodo.cs" />
+    <Compile Include="Models\PropiedadesArchivo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -162,7 +163,10 @@
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\Huffman\Importar.cshtml" />
+    <Content Include="Views\Huffman\CompresionHImportar.cshtml" />
+    <Content Include="Views\Huffman\Menu.cshtml" />
+    <Content Include="Views\Huffman\MenuHuffman.cshtml" />
+    <Content Include="Views\Huffman\VerMisCompresiones.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
