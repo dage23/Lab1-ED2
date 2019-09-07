@@ -17,9 +17,9 @@ namespace Lab1_ED2.Controllers
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
         public Nodo cNodoRaiz;
         public int TotalDeCaracteres;
-        public string diccionario;
+        //public string diccionario;
         public Dictionary<string, char> DiccionarioIndices = new Dictionary<string, char>();
-        public string TextoBinarioTRY = "";
+        public string TextoEnBinario = "";
         public string[] nombreArchivo;
         public ActionResult Importar()
         {
@@ -40,68 +40,73 @@ namespace Lab1_ED2.Controllers
                 }
             }
             TotalDeCaracteres = ListaCaracteresExistentes.Count();
-            SUma();
+            SumaCaracteres();
             //Crear Lista de Nodos
             CrearListaDeNodos();
             //Armar Arbol
             ArmarArbol();
             //Traducir A Binario
-            TradBinario();
-            while (TextoBinarioTRY.Length % 8 != 0)
+            TraductorABinario();
+            while (TextoEnBinario.Length % 8 != 0)
             {
-                TextoBinarioTRY += "0";
+                TextoEnBinario += "0";
             }
             //Escritura Huffman
-            using (var writeStream = new FileStream("C://Users//allan//Downloads//" + nombreArchivo[0] + ".huff", FileMode.OpenOrCreate))
+            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/" + nombreArchivo[0] + ".huff"), FileMode.OpenOrCreate))
             {
-                using (var writer = new StreamWriter(writeStream))
+                using (var writer = new BinaryWriter(writeStream))
                 {
-                    writer.WriteLine(TotalDeCaracteres.ToString());
-                    var byteBuffer2 = new int[bufferLength];
+                    writer.Write(nombreArchivo[1]);
+                    writer.Write((TotalDeCaracteres).ToString()+Environment.NewLine);
+                    foreach (var item in DiccionarioIndices)
+                    {
+                        writer.Write((item.Value).ToString() + "&" + item.Key + "|");
+                    }
+                    writer.Write(Environment.NewLine);
+                    var byteBuffer2 = new byte[bufferLength];
                     var contadorBits = 0;
-                    var contadorCaracteres = 0;
                     var contadorBuffer = 0;
                     var contador = 0;
                     var TextoenByte = "";
-                    while (contador != TextoBinarioTRY.Length)
+                    while (contador != TextoEnBinario.Length)
                     {
-                        TextoenByte += TextoBinarioTRY[contador];
+                        TextoenByte += TextoEnBinario[contador];
                         contadorBits++;
-
                         if (contadorBits == 8)
                         {
-                            if (contadorCaracteres <= bufferLength)
+                            if (contadorBuffer==bufferLength)
                             {
-                                var Caracteres = new char[bufferLength];
                                 for (int i = 0; i < bufferLength; i++)
                                 {
-                                    Caracteres[i] = Convert.ToChar(byteBuffer2[i]);
+                                    writer.Write(byteBuffer2[i]);
                                 }
-                                for (int i = 0; i < bufferLength; i++)
-                                {
-                                    writer.Write(Caracteres[i]);
-                                }
-
-                                byteBuffer2 = new int[bufferLength];
-                                contadorCaracteres = 0;
+                                byteBuffer2 = new byte[bufferLength];
+                                contadorBuffer = 0;
+                                byteBuffer2[contadorBuffer] = Convert.ToByte(TextoenByte, 2);
+                                contadorBuffer++;
+                                contadorBits = 0;
+                                TextoenByte = "";
                             }
-                            var TextoDecimal = Convert.ToInt32(TextoenByte, 2);
-                            byteBuffer2[contadorCaracteres] = TextoDecimal;
-                            contadorBuffer++;
-                            contadorCaracteres++;
-                            contadorBits = 0;
-                            TextoenByte = "";
+                            else
+                            {
+                                byteBuffer2[contadorBuffer] = Convert.ToByte(TextoenByte, 2);
+                                contadorBuffer++;
+                                contadorBits = 0;
+                                TextoenByte = "";
+                                if (contador==TextoEnBinario.Length-1)
+                                {
+                                    for (int i = 0; i < bufferLength; i++)
+                                    {
+                                        writer.Write(byteBuffer2[i]);
+                                    }
+                                }
+                            }
                         }
-                        contador++;
+                         contador++;
                     }
-                    writer.WriteLine();
-                    foreach (var item in DiccionarioIndices)
-                    {
-                        writer.Write(Convert.ToString(item.Value) + "&" + item.Key + "|");
-                    }
+                    writer.Write(Environment.NewLine);
                 }
             }
-
             return View();
         }
         #region CrearLista
@@ -115,24 +120,24 @@ namespace Lab1_ED2.Controllers
                 ListaCaracteresExistentes.Add(ClaseAux);
             }
         }
-        void SUma()
+        void SumaCaracteres()
         {
             for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
             {
                 for (int j = 0; j < ListaCaracteresExistentes.Count; j++)
                 {
-                    if (ListaCaracteresExistentes[i].CaracterTexto == ListaCaracteresExistentes[j].CaracterTexto && !ListaCaracteresExistentes[j].Recorrido)
+                    if (ListaCaracteresExistentes[i].CaracterTexto == ListaCaracteresExistentes[j].CaracterTexto && !ListaCaracteresExistentes[j].CaracterYaRecorrido)
                     {
                         ListaCaracteresExistentes[i].Frecuencia += 1;
-                        ListaCaracteresExistentes[i].Tomar = true;
-                        ListaCaracteresExistentes[j].Recorrido = true;
+                        ListaCaracteresExistentes[i].CaracterAUsar = true;
+                        ListaCaracteresExistentes[j].CaracterYaRecorrido = true;
                     }
 
                 }
             }
             for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
             {
-                if (ListaCaracteresExistentes[i].Tomar)
+                if (ListaCaracteresExistentes[i].CaracterAUsar)
                 {
                     ListaCaracteresFinales.Add(ListaCaracteresExistentes[i]);
                 }
@@ -186,7 +191,7 @@ namespace Lab1_ED2.Controllers
                 Diccionario(cNodoRaiz);
             }
         }
-        #endregion 
+        #endregion
         #region crearDiccionario
         void Diccionario(Nodo nNodo)
         {
@@ -194,7 +199,7 @@ namespace Lab1_ED2.Controllers
             {
                 if (nNodo.NodoHijoIzq == null)
                 {
-                    diccionario += nNodo.caracter.CaracterTexto + nNodo.indice.ToString() + "|";
+                    //diccionario += nNodo.caracter.CaracterTexto + nNodo.indice.ToString() + "|";
                     DiccionarioIndices.Add(nNodo.indice, nNodo.caracter.CaracterTexto);
                 }
                 Diccionario(nNodo.NodoHijoIzq);
@@ -218,8 +223,8 @@ namespace Lab1_ED2.Controllers
             }
         }
         #endregion
-        #region TraductorABinario
-        void TradBinario()
+        #region Traducir a Binario
+        void TraductorABinario()
         {
             for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
             {
@@ -227,7 +232,7 @@ namespace Lab1_ED2.Controllers
                 {
                     if (item.Value == ListaCaracteresExistentes[i].CaracterTexto)
                     {
-                        TextoBinarioTRY += item.Key;
+                        TextoEnBinario += item.Key;
                         ListaCaracteresExistentes[i].binarioText = item.Key;
                     }
                 }
