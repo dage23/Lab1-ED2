@@ -11,7 +11,7 @@ namespace Lab1_ED2.Controllers
 {
     public class HuffmanController : Controller
     {
-        const int bufferLength = 10;
+        const int bufferLength = 20;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public List<Caracter> ListaCaracteresFinales = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
@@ -58,7 +58,6 @@ namespace Lab1_ED2.Controllers
                 while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                 {
                     byteBuffer = Lectura.ReadBytes(bufferLength);
-                    //var result = Encoding.UTF8.GetChars(byteBuffer);
                     IntroducirALista(byteBuffer);
                 }
             }
@@ -83,8 +82,7 @@ namespace Lab1_ED2.Controllers
                     writer.Write((TotalDeCaracteres).ToString() + Environment.NewLine);
                     foreach (var item in DiccionarioIndices)
                     {
-                        var cosoPrueba = (Convert.ToInt32(item.Value));
-                        writer.Write(Convert.ToByte(cosoPrueba) + "&" + item.Key + "|");
+                        writer.Write(Convert.ToByte(item.Value) + "&" + item.Key + "|");
                     }
                     writer.Write(Environment.NewLine);
                     var byteBuffer2 = new byte[bufferLength];
@@ -144,12 +142,13 @@ namespace Lab1_ED2.Controllers
             {
                 var ClaseAux = new Caracter();
                 ClaseAux.CaracterTexto = CaracteresAux[i];
-                ClaseAux.Frecuencia = 1;
+                ClaseAux.Frecuencia = 0;
                 ListaCaracteresExistentes.Add(ClaseAux);
             }
         }
         void SumaCaracteres()
         {
+            ListaCaracteresExistentes[0].Frecuencia = 1;
             ListaCaracteresExistentes[0].CaracterAUsar = true;
             if (ListaCaracteresExistentes.Count>1)
             {
@@ -186,7 +185,7 @@ namespace Lab1_ED2.Controllers
                 {
                     caracter = ListaCaracteresFinales.ElementAt(i)
                 };
-                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / (CantTotalCaracteres);
+                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / (TotalDeCaracteres);
                 ListaNodosArbol.Add(NodoAux);
             }
         }
