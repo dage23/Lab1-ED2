@@ -160,11 +160,7 @@ namespace Lab1_ED2.Controllers
                     while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                     {
                         byteBuffer = Lectura.ReadBytes(bufferLength);
-                        if(((byteBuffer.ToCharArray()).ToString()).Contains("\r\n") && !MetadataObtenida)
-                        {
-                            Metadata=((byteBuffer.ToCharArray()).ToString()).Split("\r\n");
-                            MetadataObtenida=true;
-                        }
+                       
                     }
                 }
             }
