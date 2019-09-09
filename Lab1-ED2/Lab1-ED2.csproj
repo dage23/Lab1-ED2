@@ -167,6 +167,7 @@
     <Content Include="Views\Huffman\Menu.cshtml" />
     <Content Include="Views\Huffman\MenuHuffman.cshtml" />
     <Content Include="Views\Huffman\VerMisCompresiones.cshtml" />
+    <Content Include="Views\Huffman\DescompresionHImportar.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

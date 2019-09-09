@@ -40,10 +40,10 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult CompresionHImportar(HttpPostedFileBase ArchivoImportado)
         {
-            string archivoLeer = string.Empty;
-            string ArchivoMapeo = Server.MapPath("~/App_Data/");
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
-            string extension = Path.GetExtension(ArchivoImportado.FileName);
+            var extension = Path.GetExtension(ArchivoImportado.FileName);
             ArchivoImportado.SaveAs(archivoLeer);
             //Obtener propiedades del archivo
             var PropiedadesArchivoActual = new PropiedadesArchivo();
@@ -74,15 +74,17 @@ namespace Lab1_ED2.Controllers
                 TextoEnBinario += "0";
             }
             //Escritura Huffman
-            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/" + nombreArchivo + ".huff"), FileMode.OpenOrCreate))
+            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Compresiones/" + nombreArchivo + ".huff"), FileMode.OpenOrCreate))
             {
                 using (var writer = new BinaryWriter(writeStream))
                 {
                     writer.Write(ArchivoAnalizado.Name.ToCharArray());
-                    writer.Write((TotalDeCaracteres).ToString() + Environment.NewLine);
+                    var Txt = TotalDeCaracteres.ToString();
+                    writer.Write(Txt.ToCharArray());
                     foreach (var item in DiccionarioIndices)
                     {
-                        writer.Write(Convert.ToByte(item.Value) + "&" + item.Key + "|");
+                        var Texto = Convert.ToInt64(item.Value) + "&" + item.Key + "|";
+                        writer.Write(Texto.ToCharArray());
                     }
                     writer.Write(Environment.NewLine);
                     var byteBuffer2 = new byte[bufferLength];
@@ -135,6 +137,43 @@ namespace Lab1_ED2.Controllers
             }
             return View();
         }
+
+        public ActionResult DescompresionHImportar()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult DescompresionHImportar(HttpPostedFileBase ArchivoImportado)
+        {
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+            var extension = Path.GetExtension(ArchivoImportado.FileName);
+            ArchivoImportado.SaveAs(archivoLeer);
+            if (extension == ".huff")
+            {
+                using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
+                {
+                    var byteBuffer = new byte[bufferLength];
+                    var Metadata=new string[2];
+                    var MetadataObtenida=false;
+                    while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                    {
+                        byteBuffer = Lectura.ReadBytes(bufferLength);
+                        if(((byteBuffer.ToCharArray()).ToString()).Contains("\r\n") && !MetadataObtenida)
+                        {
+                            Metadata=((byteBuffer.ToCharArray()).ToString()).Split("\r\n");
+                            MetadataObtenida=true;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new FormatException("Formato de archivo es erroneo");
+            }
+            return View();
+        }
         #region CrearLista
         void IntroducirALista(byte[] CaracteresAux)
         {
@@ -150,7 +189,7 @@ namespace Lab1_ED2.Controllers
         {
             ListaCaracteresExistentes[0].Frecuencia = 1;
             ListaCaracteresExistentes[0].CaracterAUsar = true;
-            if (ListaCaracteresExistentes.Count>1)
+            if (ListaCaracteresExistentes.Count > 1)
             {
                 for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
                 {
