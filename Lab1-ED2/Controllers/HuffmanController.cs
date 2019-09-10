@@ -79,8 +79,9 @@ namespace Lab1_ED2.Controllers
                 using (var writer = new BinaryWriter(writeStream))
                 {
                     writer.Write(ArchivoAnalizado.Name.ToCharArray());
-                    var Txt = TotalDeCaracteres.ToString();
+                    var Txt = "&"+TotalDeCaracteres.ToString();
                     writer.Write(Txt.ToCharArray());
+                    writer.Write(Environment.NewLine);
                     foreach (var item in DiccionarioIndices)
                     {
                         var Texto = Convert.ToInt64(item.Value) + "&" + item.Key + "|";
@@ -150,18 +151,27 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
             var extension = Path.GetExtension(ArchivoImportado.FileName);
             ArchivoImportado.SaveAs(archivoLeer);
+            var Metadata = string.Empty;
+            var NombreNuevoArchivo = string.Empty;
+            var CantidadCaracteresCOnvertir = string.Empty;
+            var DiccionarioText = string.Empty;
+            var DiccionarioDescompresion = new Dictionary<char, string>();
             if (extension == ".huff")
             {
-                using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
+                using (var Reader = new StreamReader(ArchivoImportado.InputStream))
                 {
-                    var byteBuffer = new byte[bufferLength];
-                    var Metadata=new string[2];
-                    var MetadataObtenida=false;
-                    while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
-                    {
-                        byteBuffer = Lectura.ReadBytes(bufferLength);
-                       
-                    }
+                    Metadata = Reader.ReadLine();
+                    DiccionarioText = Reader.ReadLine();
+                }
+                NombreNuevoArchivo = Metadata.Split('&')[0];
+                CantidadCaracteresCOnvertir = Metadata.Split('&')[1];
+                CantidadCaracteresCOnvertir=CantidadCaracteresCOnvertir.Split('\u0002')[0];
+                var ArregloDiccionario = DiccionarioText.Split('|');
+                for (int i = 0; i < ArregloDiccionario.Length-1; i++)
+                {
+                    var Caracter = Convert.ToChar(Convert.ToByte(ArregloDiccionario[i].Split('&')[0]));
+                    var Indice = ArregloDiccionario[i].Split('&')[1];
+                    DiccionarioDescompresion.Add(Caracter, Indice);
                 }
             }
             else
