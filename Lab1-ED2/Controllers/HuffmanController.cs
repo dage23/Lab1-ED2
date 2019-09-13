@@ -162,13 +162,12 @@ namespace Lab1_ED2.Controllers
                 if (extension == ".huff")
                 {
                     var fs = new FileStream(archivoLeer, FileMode.OpenOrCreate);
-
                     var Reader = new StreamReader(fs);
-                    int caracteresCuenta = 0;
+                    long caracteresCuenta = 0;
                     Metadata = Reader.ReadLine();
-                    caracteresCuenta = Metadata.Count();
+                    caracteresCuenta = Metadata.LongCount();
                     DiccionarioText = Reader.ReadLine();
-                    caracteresCuenta += DiccionarioText.Count();
+                    caracteresCuenta += DiccionarioText.LongCount();
                     NombreNuevoArchivo = Metadata.Split('.')[0];
                     ExtensionNuevoArchivo = "." + Metadata.Split('.')[1];
                     CantidadCaracteresCOnvertir = Metadata.Split('.')[2];
@@ -180,7 +179,7 @@ namespace Lab1_ED2.Controllers
                         var Indice = ArregloDiccionario[i].Split('&')[1];
                         DiccionarioDescompresion.Add(Indice, Caracter);
                     }
-                    
+
                     var Bs = new BinaryReader(fs);
                     using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo), FileMode.OpenOrCreate))
                     {
@@ -189,9 +188,10 @@ namespace Lab1_ED2.Controllers
                             var ListaDeDecimalesFlotantes = new List<char>();
                             string numRetenido = "";
                             var ContadordeCaracteres = Convert.ToInt16(CantidadCaracteresCOnvertir);
+                            Bs.BaseStream.Seek(caracteresCuenta+4,SeekOrigin.Begin);
                             while (Bs.BaseStream.Position != fs.Length)
                             {
-                                var Caracter = Bs.ReadChar();
+                                var Caracter = Bs.ReadByte();
                                 int Decimal = Convert.ToInt32(Caracter);
                                 var Binario = DecimalABinario(Decimal).ToCharArray();
                                 for (int i = 0; i < Binario.Length; i++)
