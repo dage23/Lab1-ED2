@@ -4,4 +4,16 @@
 }
 
 <h2>DescompresionHImportar</h2>
+    ViewBag.Title = "Descompresion Huffman";
+}
+
+<h2>Descomprimir Archivo Huffman</h2>
+@using (Html.BeginForm("DescompresionHImportar", "Huffman", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    <input type="file" name="ArchivoImportado" />
+    <input type="submit" value="Importar" class="btn btn-default" />
+}
+<p>
+    @Html.ActionLink("Ver Mis Compresiones", "VerMisCompresiones", "Huffman")
+</p>
 

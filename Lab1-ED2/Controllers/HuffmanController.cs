@@ -9,9 +9,9 @@ using Lab1_ED2.Models;
 using Lab1_ED2.Helper;
 namespace Lab1_ED2.Controllers
 {
-    public class HuffmanController : Controller
+    public class HuffmanController : BaseController
     {
-        const int bufferLength = 10;
+        const int bufferLength = 20;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public List<Caracter> ListaCaracteresFinales = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
@@ -40,10 +40,10 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult CompresionHImportar(HttpPostedFileBase ArchivoImportado)
         {
-            string archivoLeer = string.Empty;
-            string ArchivoMapeo = Server.MapPath("~/App_Data/");
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
-            string extension = Path.GetExtension(ArchivoImportado.FileName);
+            var extension = Path.GetExtension(ArchivoImportado.FileName);
             ArchivoImportado.SaveAs(archivoLeer);
             //Obtener propiedades del archivo
             var PropiedadesArchivoActual = new PropiedadesArchivo();
@@ -58,7 +58,6 @@ namespace Lab1_ED2.Controllers
                 while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                 {
                     byteBuffer = Lectura.ReadBytes(bufferLength);
-                    //var result = Encoding.UTF8.GetChars(byteBuffer);
                     IntroducirALista(byteBuffer);
                 }
             }
@@ -75,16 +74,18 @@ namespace Lab1_ED2.Controllers
                 TextoEnBinario += "0";
             }
             //Escritura Huffman
-            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/" + nombreArchivo + ".huff"), FileMode.OpenOrCreate))
+            using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Compresiones/" + nombreArchivo + ".huff"), FileMode.OpenOrCreate))
             {
                 using (var writer = new BinaryWriter(writeStream))
                 {
                     writer.Write(ArchivoAnalizado.Name.ToCharArray());
-                    writer.Write((TotalDeCaracteres).ToString() + Environment.NewLine);
+                    var Txt = "." + TotalDeCaracteres.ToString();
+                    writer.Write(Txt.ToCharArray());
+                    writer.Write(Environment.NewLine);
                     foreach (var item in DiccionarioIndices)
                     {
-                        var cosoPrueba = (Convert.ToInt32(item.Value));
-                        writer.Write(Convert.ToByte(cosoPrueba) + "&" + item.Key + "|");
+                        var Texto = Convert.ToInt64(item.Value) + "&" + item.Key + "|";
+                        writer.Write(Texto.ToCharArray());
                     }
                     writer.Write(Environment.NewLine);
                     var byteBuffer2 = new byte[bufferLength];
@@ -135,6 +136,103 @@ namespace Lab1_ED2.Controllers
                     Datos.Instance.PilaArchivosComprimidos.Push(PropiedadesArchivoActual);
                 }
             }
+            Success(string.Format("Archivo comprimido exitosamente"), true);
+            return View();
+        }
+
+        public ActionResult DescompresionHImportar()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult DescompresionHImportar(HttpPostedFileBase ArchivoImportado)
+        {
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            if (ArchivoImportado != null)
+            {
+                archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+                var extension = Path.GetExtension(ArchivoImportado.FileName);
+                ArchivoImportado.SaveAs(archivoLeer);
+                var Metadata = string.Empty;
+                var NombreNuevoArchivo = string.Empty;
+                var CantidadCaracteresCOnvertir = string.Empty;
+                var DiccionarioText = string.Empty;
+                var DiccionarioDescompresion = new Dictionary<string, char>();
+                var ExtensionNuevoArchivo = "";
+                if (extension == ".huff")
+                {
+                    var fs = new FileStream(archivoLeer, FileMode.OpenOrCreate);
+                    var Reader = new StreamReader(fs);
+                    long caracteresCuenta = 0;
+                    Metadata = Reader.ReadLine();
+                    caracteresCuenta = Metadata.LongCount();
+                    DiccionarioText = Reader.ReadLine();
+                    caracteresCuenta += DiccionarioText.LongCount();
+                    NombreNuevoArchivo = Metadata.Split('.')[0];
+                    ExtensionNuevoArchivo = "." + Metadata.Split('.')[1];
+                    CantidadCaracteresCOnvertir = Metadata.Split('.')[2];
+                    CantidadCaracteresCOnvertir = CantidadCaracteresCOnvertir.Split('\u0002')[0];
+                    var ArregloDiccionario = DiccionarioText.Split('|');
+                    for (int i = 0; i < ArregloDiccionario.Length - 1; i++)
+                    {
+                        var Caracter = Convert.ToChar(Convert.ToByte(ArregloDiccionario[i].Split('&')[0]));
+                        var Indice = ArregloDiccionario[i].Split('&')[1];
+                        DiccionarioDescompresion.Add(Indice, Caracter);
+                    }
+
+                    var Bs = new BinaryReader(fs);
+                    using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo), FileMode.OpenOrCreate))
+                    {
+                        using (var writer = new BinaryWriter(writeStream))
+                        {
+                            var ListaDeDecimalesFlotantes = new List<char>();
+                            string numRetenido = "";
+                            var ContadordeCaracteres = Convert.ToInt16(CantidadCaracteresCOnvertir);
+                            Bs.BaseStream.Seek(caracteresCuenta + 4, SeekOrigin.Begin);
+                            while (Bs.BaseStream.Position != fs.Length)
+                            {
+                                var Caracter = Bs.ReadByte();
+                                int Decimal = Convert.ToInt32(Caracter);
+                                var Binario = DecimalABinario(Decimal).ToCharArray();
+                                for (int i = 0; i < Binario.Length; i++)
+                                {
+                                    ListaDeDecimalesFlotantes.Add(Binario[i]);
+                                }
+
+                                foreach (var item in ListaDeDecimalesFlotantes)
+                                {
+                                    numRetenido = numRetenido + Convert.ToString(item);
+                                    try
+                                    {
+                                        if (ContadordeCaracteres != 0)
+                                        {
+                                            writer.Write(DiccionarioDescompresion[numRetenido]);
+                                            numRetenido = "";
+                                            ContadordeCaracteres--;
+                                        }
+                                    }
+                                    catch (Exception)
+                                    { }
+                                }
+                                ListaDeDecimalesFlotantes.Clear();
+                            }
+                        }
+                    }
+                    Bs.Close();
+                    Reader.Close();
+                    fs.Close();
+                    Success(string.Format("Archivo descomprimido exitosamente"), true);
+                }
+                else
+                {
+                    Danger("Formato de archivo no es 'huff'", true);
+                }
+            }
+            else
+            {
+                Danger("Formato de archivo no es 'huff'", true);
+            }
             return View();
         }
         #region CrearLista
@@ -144,14 +242,15 @@ namespace Lab1_ED2.Controllers
             {
                 var ClaseAux = new Caracter();
                 ClaseAux.CaracterTexto = CaracteresAux[i];
-                ClaseAux.Frecuencia = 1;
+                ClaseAux.Frecuencia = 0;
                 ListaCaracteresExistentes.Add(ClaseAux);
             }
         }
         void SumaCaracteres()
         {
+            ListaCaracteresExistentes[0].Frecuencia = 1;
             ListaCaracteresExistentes[0].CaracterAUsar = true;
-            if (ListaCaracteresExistentes.Count>1)
+            if (ListaCaracteresExistentes.Count > 1)
             {
                 for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
                 {
@@ -186,7 +285,7 @@ namespace Lab1_ED2.Controllers
                 {
                     caracter = ListaCaracteresFinales.ElementAt(i)
                 };
-                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / (CantTotalCaracteres);
+                NodoAux.probabilidad = Convert.ToDouble(NodoAux.caracter.Frecuencia) / (TotalDeCaracteres);
                 ListaNodosArbol.Add(NodoAux);
             }
         }
@@ -270,6 +369,51 @@ namespace Lab1_ED2.Controllers
                 }
             }
         }
+        String DecimalABinario(int NUM)
+        {
+            int cont = 0;
+            bool bandera = false;
+            string regresa = "";
+            while (bandera == false)
+            {
+                int a = Convert.ToInt32(Math.Pow(2, cont));
+                if (NUM < a)
+                {
+                    bandera = true;
+                }
+                else
+                {
+                    cont++;
+                }
+            }
+            var suma = 0;
+            for (int i = cont - 1; i >= 0; i--)
+            {
+                int A = Convert.ToInt32(Math.Pow(2, i));
+                if (suma + A > NUM)
+                {
+                    regresa = regresa + "0";
+                }
+                else
+                {
+                    regresa = regresa + "1";
+                    suma += A;
+                }
+            }
+            if (regresa.Length != 8)
+            {
+                string Aux = "";
+                for (int i = regresa.Length; i < 8; i++)
+                {
+                    Aux = Aux + "0";
+                }
+                Aux = Aux + regresa;
+                regresa = Aux;
+            }
+            return regresa;
+
+        }
+
         #endregion
     }
 }
