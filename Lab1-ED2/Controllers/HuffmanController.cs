@@ -79,7 +79,7 @@ namespace Lab1_ED2.Controllers
                 using (var writer = new BinaryWriter(writeStream))
                 {
                     writer.Write(ArchivoAnalizado.Name.ToCharArray());
-                    var Txt = "."+TotalDeCaracteres.ToString();
+                    var Txt = "." + TotalDeCaracteres.ToString();
                     writer.Write(Txt.ToCharArray());
                     writer.Write(Environment.NewLine);
                     foreach (var item in DiccionarioIndices)
@@ -148,7 +148,7 @@ namespace Lab1_ED2.Controllers
         {
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
-            if (ArchivoImportado!= null)
+            if (ArchivoImportado != null)
             {
                 archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
                 var extension = Path.GetExtension(ArchivoImportado.FileName);
@@ -158,64 +158,69 @@ namespace Lab1_ED2.Controllers
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
                 var DiccionarioDescompresion = new Dictionary<string, char>();
+                var ExtensionNuevoArchivo = "";
                 if (extension == ".huff")
                 {
-                    using (var Reader = new StreamReader(ArchivoImportado.InputStream))
+                    var fs = new FileStream(archivoLeer, FileMode.OpenOrCreate);
+
+                    var Reader = new StreamReader(fs);
+                    int caracteresCuenta = 0;
+                    Metadata = Reader.ReadLine();
+                    caracteresCuenta = Metadata.Count();
+                    DiccionarioText = Reader.ReadLine();
+                    caracteresCuenta += DiccionarioText.Count();
+                    NombreNuevoArchivo = Metadata.Split('.')[0];
+                    ExtensionNuevoArchivo = "." + Metadata.Split('.')[1];
+                    CantidadCaracteresCOnvertir = Metadata.Split('.')[2];
+                    CantidadCaracteresCOnvertir = CantidadCaracteresCOnvertir.Split('\u0002')[0];
+                    var ArregloDiccionario = DiccionarioText.Split('|');
+                    for (int i = 0; i < ArregloDiccionario.Length - 1; i++)
                     {
-                        Metadata = Reader.ReadLine();
-                        DiccionarioText = Reader.ReadLine();
-                        NombreNuevoArchivo = Metadata.Split('.')[0];
-                        var ExtensionNuevoArchivo = "." + Metadata.Split('.')[1];
-                        CantidadCaracteresCOnvertir = Metadata.Split('.')[2];
-                        CantidadCaracteresCOnvertir = CantidadCaracteresCOnvertir.Split('\u0002')[0];
-                        var ArregloDiccionario = DiccionarioText.Split('|');
-                        for (int i = 0; i < ArregloDiccionario.Length - 1; i++)
+                        var Caracter = Convert.ToChar(Convert.ToByte(ArregloDiccionario[i].Split('&')[0]));
+                        var Indice = ArregloDiccionario[i].Split('&')[1];
+                        DiccionarioDescompresion.Add(Indice, Caracter);
+                    }
+                    
+                    var Bs = new BinaryReader(fs);
+                    using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo), FileMode.OpenOrCreate))
+                    {
+                        using (var writer = new BinaryWriter(writeStream))
                         {
-                            var Caracter = Convert.ToChar(Convert.ToByte(ArregloDiccionario[i].Split('&')[0]));
-                            var Indice = ArregloDiccionario[i].Split('&')[1];
-                            DiccionarioDescompresion.Add(Indice, Caracter);
-                        }
-                        //EMPIEZA DECODIFICACION
-                        using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo), FileMode.OpenOrCreate))
-                        {
-                            using (var writer = new BinaryWriter(writeStream))
+                            var ListaDeDecimalesFlotantes = new List<char>();
+                            string numRetenido = "";
+                            var ContadordeCaracteres = Convert.ToInt16(CantidadCaracteresCOnvertir);
+                            while (Bs.BaseStream.Position != fs.Length)
                             {
-                                var ListaDeDecimalesFlotantes = new List<char>();
-                                bool bandera;
-                                string numRetenido = "";
-                                var ContadordeCaracteres = Convert.ToInt16( CantidadCaracteresCOnvertir);
-                                while (!Reader.EndOfStream)
+                                var Caracter = Bs.ReadChar();
+                                int Decimal = Convert.ToInt32(Caracter);
+                                var Binario = DecimalABinario(Decimal).ToCharArray();
+                                for (int i = 0; i < Binario.Length; i++)
                                 {
-                                    bandera = false;
-                                    var Caracter = Reader.Read();
-                                    int Decimal = Convert.ToInt32(Caracter);
-                                    var Binario = DecimalABinario(Decimal).ToCharArray();
-                                    for (int i = 0; i < Binario.Length; i++)
+                                    ListaDeDecimalesFlotantes.Add(Binario[i]);
+                                }
+
+                                foreach (var item in ListaDeDecimalesFlotantes)
+                                {
+                                    numRetenido = numRetenido + Convert.ToString(item);
+                                    try
                                     {
-                                        ListaDeDecimalesFlotantes.Add(Binario[i]);
-                                    }
-                                    
-                                    foreach (var item in ListaDeDecimalesFlotantes)
-                                    {
-                                        numRetenido = numRetenido + Convert.ToString(item);                                        
-                                        try
+                                        if (ContadordeCaracteres != 0)
                                         {
-                                            if (ContadordeCaracteres != 0)
-                                            {
-                                                writer.Write(DiccionarioDescompresion[numRetenido]);
-                                                numRetenido = "";
-                                                ContadordeCaracteres--;
-                                            }
+                                            writer.Write(DiccionarioDescompresion[numRetenido]);
+                                            numRetenido = "";
+                                            ContadordeCaracteres--;
                                         }
-                                        catch (Exception)
-                                        {   }
                                     }
-                                    ListaDeDecimalesFlotantes.Clear();
-                                }                                
+                                    catch (Exception)
+                                    { }
+                                }
+                                ListaDeDecimalesFlotantes.Clear();
                             }
                         }
-
                     }
+                    Bs.Close();
+                    Reader.Close();
+                    fs.Close();
                 }
                 else
                 {
@@ -366,10 +371,10 @@ namespace Lab1_ED2.Controllers
         {
             int cont = 0;
             bool bandera = false;
-            string regresa="";
+            string regresa = "";
             while (bandera == false)
             {
-                int a = Convert.ToInt32 ( Math.Pow(2,cont));
+                int a = Convert.ToInt32(Math.Pow(2, cont));
                 if (NUM < a)
                 {
                     bandera = true;
@@ -380,9 +385,9 @@ namespace Lab1_ED2.Controllers
                 }
             }
             var suma = 0;
-            for (int i = cont-1; i >= 0; i--)
+            for (int i = cont - 1; i >= 0; i--)
             {
-                int A = Convert.ToInt32(Math.Pow(2,i));
+                int A = Convert.ToInt32(Math.Pow(2, i));
                 if (suma + A > NUM)
                 {
                     regresa = regresa + "0";
@@ -393,7 +398,7 @@ namespace Lab1_ED2.Controllers
                     suma += A;
                 }
             }
-            if(regresa.Length!=8)
+            if (regresa.Length != 8)
             {
                 string Aux = "";
                 for (int i = regresa.Length; i < 8; i++)
