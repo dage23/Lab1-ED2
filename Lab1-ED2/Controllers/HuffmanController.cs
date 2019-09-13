@@ -9,7 +9,7 @@ using Lab1_ED2.Models;
 using Lab1_ED2.Helper;
 namespace Lab1_ED2.Controllers
 {
-    public class HuffmanController : Controller
+    public class HuffmanController : BaseController
     {
         const int bufferLength = 20;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
@@ -136,6 +136,7 @@ namespace Lab1_ED2.Controllers
                     Datos.Instance.PilaArchivosComprimidos.Push(PropiedadesArchivoActual);
                 }
             }
+            Success(string.Format("Archivo comprimido exitosamente"), true);
             return View();
         }
 
@@ -188,7 +189,7 @@ namespace Lab1_ED2.Controllers
                             var ListaDeDecimalesFlotantes = new List<char>();
                             string numRetenido = "";
                             var ContadordeCaracteres = Convert.ToInt16(CantidadCaracteresCOnvertir);
-                            Bs.BaseStream.Seek(caracteresCuenta+4,SeekOrigin.Begin);
+                            Bs.BaseStream.Seek(caracteresCuenta + 4, SeekOrigin.Begin);
                             while (Bs.BaseStream.Position != fs.Length)
                             {
                                 var Caracter = Bs.ReadByte();
@@ -221,15 +222,16 @@ namespace Lab1_ED2.Controllers
                     Bs.Close();
                     Reader.Close();
                     fs.Close();
+                    Success(string.Format("Archivo descomprimido exitosamente"), true);
                 }
                 else
                 {
-                    throw new FormatException("Formato de archivo es erroneo");
+                    Danger("Formato de archivo no es 'huff'", true);
                 }
             }
             else
             {
-                throw new FormatException("Formato de archivo es erroneo");
+                Danger("Formato de archivo no es 'huff'", true);
             }
             return View();
         }

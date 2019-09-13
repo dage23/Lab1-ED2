@@ -21,9 +21,9 @@
             </div>           
         </div>
     </div>
-    <div class="container body-content">
-               @*@Html.Partial("_Alerts")*@
-               @RenderBody()
+    <div class=“container body-content”>
+        @{ Html.RenderPartial("_Alerts"); }
+        @RenderBody()
         <hr />
         <footer>
             <p>&copy; @DateTime.Now.Year - Karen Paiz y Allan Davila</p>
