@@ -188,7 +188,7 @@ namespace Lab1_ED2.Controllers
                         {
                             var ListaDeDecimalesFlotantes = new List<char>();
                             string numRetenido = "";
-                            var ContadordeCaracteres = Convert.ToInt16(CantidadCaracteresCOnvertir);
+                            var ContadordeCaracteres = Convert.ToInt32(CantidadCaracteresCOnvertir);
                             Bs.BaseStream.Seek(caracteresCuenta + 4, SeekOrigin.Begin);
                             while (Bs.BaseStream.Position != fs.Length)
                             {
