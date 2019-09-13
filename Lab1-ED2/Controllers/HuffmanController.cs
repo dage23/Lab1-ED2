@@ -9,7 +9,7 @@ using Lab1_ED2.Models;
 using Lab1_ED2.Helper;
 namespace Lab1_ED2.Controllers
 {
-    public class HuffmanController : Controller
+    public class HuffmanController : BaseController
     {
         const int bufferLength = 20;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
@@ -79,8 +79,9 @@ namespace Lab1_ED2.Controllers
                 using (var writer = new BinaryWriter(writeStream))
                 {
                     writer.Write(ArchivoAnalizado.Name.ToCharArray());
-                    var Txt = TotalDeCaracteres.ToString();
+                    var Txt = "." + TotalDeCaracteres.ToString();
                     writer.Write(Txt.ToCharArray());
+                    writer.Write(Environment.NewLine);
                     foreach (var item in DiccionarioIndices)
                     {
                         var Texto = Convert.ToInt64(item.Value) + "&" + item.Key + "|";
@@ -135,6 +136,7 @@ namespace Lab1_ED2.Controllers
                     Datos.Instance.PilaArchivosComprimidos.Push(PropiedadesArchivoActual);
                 }
             }
+            Success(string.Format("Archivo comprimido exitosamente"), true);
             return View();
         }
 
@@ -147,30 +149,89 @@ namespace Lab1_ED2.Controllers
         {
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
-            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
-            var extension = Path.GetExtension(ArchivoImportado.FileName);
-            ArchivoImportado.SaveAs(archivoLeer);
-            if (extension == ".huff")
+            if (ArchivoImportado != null)
             {
-                using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
+                archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+                var extension = Path.GetExtension(ArchivoImportado.FileName);
+                ArchivoImportado.SaveAs(archivoLeer);
+                var Metadata = string.Empty;
+                var NombreNuevoArchivo = string.Empty;
+                var CantidadCaracteresCOnvertir = string.Empty;
+                var DiccionarioText = string.Empty;
+                var DiccionarioDescompresion = new Dictionary<string, char>();
+                var ExtensionNuevoArchivo = "";
+                if (extension == ".huff")
                 {
-                    var byteBuffer = new byte[bufferLength];
-                    var Metadata=new string[2];
-                    var MetadataObtenida=false;
-                    while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                    var fs = new FileStream(archivoLeer, FileMode.OpenOrCreate);
+                    var Reader = new StreamReader(fs);
+                    long caracteresCuenta = 0;
+                    Metadata = Reader.ReadLine();
+                    caracteresCuenta = Metadata.LongCount();
+                    DiccionarioText = Reader.ReadLine();
+                    caracteresCuenta += DiccionarioText.LongCount();
+                    NombreNuevoArchivo = Metadata.Split('.')[0];
+                    ExtensionNuevoArchivo = "." + Metadata.Split('.')[1];
+                    CantidadCaracteresCOnvertir = Metadata.Split('.')[2];
+                    CantidadCaracteresCOnvertir = CantidadCaracteresCOnvertir.Split('\u0002')[0];
+                    var ArregloDiccionario = DiccionarioText.Split('|');
+                    for (int i = 0; i < ArregloDiccionario.Length - 1; i++)
                     {
-                        byteBuffer = Lectura.ReadBytes(bufferLength);
-                        if(((byteBuffer.ToCharArray()).ToString()).Contains("\r\n") && !MetadataObtenida)
+                        var Caracter = Convert.ToChar(Convert.ToByte(ArregloDiccionario[i].Split('&')[0]));
+                        var Indice = ArregloDiccionario[i].Split('&')[1];
+                        DiccionarioDescompresion.Add(Indice, Caracter);
+                    }
+
+                    var Bs = new BinaryReader(fs);
+                    using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo), FileMode.OpenOrCreate))
+                    {
+                        using (var writer = new BinaryWriter(writeStream))
                         {
-                            Metadata=((byteBuffer.ToCharArray()).ToString()).Split("\r\n");
-                            MetadataObtenida=true;
+                            var ListaDeDecimalesFlotantes = new List<char>();
+                            string numRetenido = "";
+                            var ContadordeCaracteres = Convert.ToInt16(CantidadCaracteresCOnvertir);
+                            Bs.BaseStream.Seek(caracteresCuenta + 4, SeekOrigin.Begin);
+                            while (Bs.BaseStream.Position != fs.Length)
+                            {
+                                var Caracter = Bs.ReadByte();
+                                int Decimal = Convert.ToInt32(Caracter);
+                                var Binario = DecimalABinario(Decimal).ToCharArray();
+                                for (int i = 0; i < Binario.Length; i++)
+                                {
+                                    ListaDeDecimalesFlotantes.Add(Binario[i]);
+                                }
+
+                                foreach (var item in ListaDeDecimalesFlotantes)
+                                {
+                                    numRetenido = numRetenido + Convert.ToString(item);
+                                    try
+                                    {
+                                        if (ContadordeCaracteres != 0)
+                                        {
+                                            writer.Write(DiccionarioDescompresion[numRetenido]);
+                                            numRetenido = "";
+                                            ContadordeCaracteres--;
+                                        }
+                                    }
+                                    catch (Exception)
+                                    { }
+                                }
+                                ListaDeDecimalesFlotantes.Clear();
+                            }
                         }
                     }
+                    Bs.Close();
+                    Reader.Close();
+                    fs.Close();
+                    Success(string.Format("Archivo descomprimido exitosamente"), true);
+                }
+                else
+                {
+                    Danger("Formato de archivo no es 'huff'", true);
                 }
             }
             else
             {
-                throw new FormatException("Formato de archivo es erroneo");
+                Danger("Formato de archivo no es 'huff'", true);
             }
             return View();
         }
@@ -308,6 +369,51 @@ namespace Lab1_ED2.Controllers
                 }
             }
         }
+        String DecimalABinario(int NUM)
+        {
+            int cont = 0;
+            bool bandera = false;
+            string regresa = "";
+            while (bandera == false)
+            {
+                int a = Convert.ToInt32(Math.Pow(2, cont));
+                if (NUM < a)
+                {
+                    bandera = true;
+                }
+                else
+                {
+                    cont++;
+                }
+            }
+            var suma = 0;
+            for (int i = cont - 1; i >= 0; i--)
+            {
+                int A = Convert.ToInt32(Math.Pow(2, i));
+                if (suma + A > NUM)
+                {
+                    regresa = regresa + "0";
+                }
+                else
+                {
+                    regresa = regresa + "1";
+                    suma += A;
+                }
+            }
+            if (regresa.Length != 8)
+            {
+                string Aux = "";
+                for (int i = regresa.Length; i < 8; i++)
+                {
+                    Aux = Aux + "0";
+                }
+                Aux = Aux + regresa;
+                regresa = Aux;
+            }
+            return regresa;
+
+        }
+
         #endregion
     }
 }
