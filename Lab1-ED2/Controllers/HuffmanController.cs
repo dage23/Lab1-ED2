@@ -27,7 +27,7 @@ namespace Lab1_ED2.Controllers
         }
         public ActionResult VerMisCompresiones()
         {
-            return View(Datos.Instance.PilaArchivosComprimidos);
+            return View(LeerMisCompresiones());
         }
         public ActionResult MenuHuffman()
         {
@@ -133,12 +133,15 @@ namespace Lab1_ED2.Controllers
                     PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
                     PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
                     PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
-                    Datos.Instance.PilaArchivosComprimidos.Push(PropiedadesArchivoActual);
+                    GuaradarCompresiones(PropiedadesArchivoActual);
                 }
             }
             Success(string.Format("Archivo comprimido exitosamente"), true);
-            return View();
+            var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".huff";
+            return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
+            
         }
+        
 
         public ActionResult DescompresionHImportar()
         {
@@ -149,17 +152,18 @@ namespace Lab1_ED2.Controllers
         {
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            var NombreNuevoArchivo = "";
+            var ExtensionNuevoArchivo = "";
             if (ArchivoImportado != null)
             {
                 archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
                 var extension = Path.GetExtension(ArchivoImportado.FileName);
                 ArchivoImportado.SaveAs(archivoLeer);
                 var Metadata = string.Empty;
-                var NombreNuevoArchivo = string.Empty;
+                
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
                 var DiccionarioDescompresion = new Dictionary<string, char>();
-                var ExtensionNuevoArchivo = "";
                 if (extension == ".huff")
                 {
                     var fs = new FileStream(archivoLeer, FileMode.OpenOrCreate);
@@ -233,7 +237,8 @@ namespace Lab1_ED2.Controllers
             {
                 Danger("Formato de archivo no es 'huff'", true);
             }
-            return View();
+            var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
+            return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
         }
         #region CrearLista
         void IntroducirALista(byte[] CaracteresAux)
@@ -415,6 +420,49 @@ namespace Lab1_ED2.Controllers
         }
 
         #endregion
+
+        List<PropiedadesArchivo> LeerMisCompresiones()
+        {
+            var Lista = new List<PropiedadesArchivo>();
+            string archivoLeer = string.Empty;
+            string ArchivoMapeo = Server.MapPath("~/App_Data/");
+            archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
+            try
+            {
+                using (var Lectura = new StreamReader(archivoLeer))
+                {
+                    while (!Lectura.EndOfStream)
+                    {
+                        var Cadena = Lectura.ReadLine();
+                        var Auxiliar = new PropiedadesArchivo();
+                        Auxiliar.NombreArchivoOriginal = Cadena.Split('|')[0];
+                        Auxiliar.TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[1]);
+                        Auxiliar.TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[2]);
+                        Auxiliar.RazonCompresion = Convert.ToDouble(Cadena.Split('|')[3]);
+                        Auxiliar.FactorCompresion = Convert.ToDouble(Cadena.Split('|')[4]);
+                        Auxiliar.PorcentajeReduccion = Cadena.Split('|')[5];
+                        Lista.Add(Auxiliar);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return Lista;
+        }
+        void GuaradarCompresiones(PropiedadesArchivo Archivo)
+        {
+            string archivoLeer = string.Empty;
+            string ArchivoMapeo = Server.MapPath("~/App_Data/");
+            archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
+            using (var writer = new StreamWriter(archivoLeer, true))
+            {
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.RazonCompresion + "|" + Archivo.FactorCompresion + "|" + Archivo.PorcentajeReduccion);
+                writer.Close();
+            }
+
+
+        }
     }
 }
 
