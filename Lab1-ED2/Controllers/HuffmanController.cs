@@ -33,6 +33,56 @@ namespace Lab1_ED2.Controllers
         {
             return View();
         }
+        public ActionResult MenuLZW()
+        {
+            return View();
+        }
+        public ActionResult CompresionLZWImportar()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult CompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
+        {
+            var DiccionarioCaracteresExistentes = new SortedDictionary<string,int>();
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+            var extension = Path.GetExtension(ArchivoImportado.FileName);
+            ArchivoImportado.SaveAs(archivoLeer);
+            var PropiedadesArchivoActual = new PropiedadesArchivo();
+            FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+            PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
+            PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
+            nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
+            var IndiceInit = 0;
+            using (var Lectura =new BinaryReader(ArchivoImportado.InputStream))
+            {
+                var byteBuffer = new byte[bufferLength];
+                while (Lectura.BaseStream.Position!=Lectura.BaseStream.Length)
+                {
+                    byteBuffer = Lectura.ReadBytes(bufferLength);
+                    foreach (var item in byteBuffer)
+                    {
+                        if (!DiccionarioCaracteresExistentes.ContainsKey((Convert.ToChar(item)).ToString()))
+                        {
+                            DiccionarioCaracteresExistentes.Add((Convert.ToChar(item)).ToString(),IndiceInit);
+                            IndiceInit++;
+                        }
+                    }
+                }                
+            }
+                return View();
+        }
+        public ActionResult DecompresionLZWImportar()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult DecompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
+        {
+            return View();
+        }
         public ActionResult CompresionHImportar()
         {
             return View();
@@ -133,6 +183,7 @@ namespace Lab1_ED2.Controllers
                     PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
                     PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
                     PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
+                    PropiedadesArchivoActual.FormatoCompresion = ".huff";
                     GuaradarCompresiones(PropiedadesArchivoActual);
                 }
             }
@@ -441,6 +492,7 @@ namespace Lab1_ED2.Controllers
                         Auxiliar.RazonCompresion = Convert.ToDouble(Cadena.Split('|')[3]);
                         Auxiliar.FactorCompresion = Convert.ToDouble(Cadena.Split('|')[4]);
                         Auxiliar.PorcentajeReduccion = Cadena.Split('|')[5];
+                        Auxiliar.FormatoCompresion = Cadena.Split('|')[6];
                         Lista.Add(Auxiliar);
                     }
                 }
@@ -457,7 +509,7 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.RazonCompresion + "|" + Archivo.FactorCompresion + "|" + Archivo.PorcentajeReduccion);
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.RazonCompresion + "|" + Archivo.FactorCompresion + "|" + Archivo.PorcentajeReduccion+"|"+Archivo.FormatoCompresion);
                 writer.Close();
             }
 
