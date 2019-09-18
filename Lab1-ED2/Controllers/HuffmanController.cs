@@ -21,6 +21,7 @@ namespace Lab1_ED2.Controllers
         public string TextoEnBinario = "";
         public string nombreArchivo;
         public Dictionary<string, int> DiccionarioLZWCompresion = new Dictionary<string, int>();
+        //Vistas
         public ActionResult Menu()
         {
             return View();
@@ -37,6 +38,8 @@ namespace Lab1_ED2.Controllers
         {
             return View();
         }
+        //Compresiones
+        #region LZW
         public ActionResult CompresionLZWImportar()
         {
             return View();
@@ -56,41 +59,61 @@ namespace Lab1_ED2.Controllers
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
             using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
             {
-                var byteBuffer = new byte[bufferLength];
-                while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Compresiones/" + nombreArchivo + ".lzw"), FileMode.OpenOrCreate))
                 {
-                    byteBuffer = Lectura.ReadBytes(bufferLength);
-                    foreach (var item in byteBuffer)
+                    using (var writer = new BinaryWriter(writeStream))
                     {
-                        if (!DiccionarioLZWCompresion.ContainsKey((Convert.ToChar(item)).ToString()))
+                        var byteBuffer = new byte[bufferLength];
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                         {
-                            DiccionarioLZWCompresion.Add((Convert.ToChar(item)).ToString(), DiccionarioLZWCompresion.Count+1);
+                            byteBuffer = Lectura.ReadBytes(bufferLength);
+                            foreach (var item in byteBuffer)
+                            {
+                                if (!DiccionarioLZWCompresion.ContainsKey((Convert.ToChar(item)).ToString()))
+                                {
+                                    DiccionarioLZWCompresion.Add((Convert.ToChar(item)).ToString(), DiccionarioLZWCompresion.Count + 1);
+                                }
+                            }
                         }
-                    }
-                }
-                Lectura.BaseStream.Position = 0;
-                var CaracterActual = string.Empty;
-                var Output = string.Empty;
-                while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
-                {
-                    byteBuffer = Lectura.ReadBytes(bufferLength);
-                    foreach (byte item in byteBuffer)
-                    {
-                        string wc = CaracterActual + Convert.ToChar(item);
-                        if (DiccionarioLZWCompresion.ContainsKey(wc))
+                        foreach (var item in DiccionarioLZWCompresion)
                         {
-                            CaracterActual = wc;
+                            var Indice = ((item.Key)+(item.Value).ToString()+"|").ToCharArray();
+                            writer.Write(Indice);
                         }
-                        else
+                        writer.Write("\r\n");
+                        Lectura.BaseStream.Position = 0;
+                        var CaracterActual = string.Empty;
+                        var Output = string.Empty;
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                         {
-                            Output += (DiccionarioLZWCompresion[CaracterActual]);
-                            DiccionarioLZWCompresion.Add(wc, DiccionarioLZWCompresion.Count+1);
-                            CaracterActual = Convert.ToChar(item).ToString();
+                            byteBuffer = Lectura.ReadBytes(bufferLength);
+                            foreach (byte item in byteBuffer)
+                            {
+                                string CadenaAnalizada = CaracterActual + Convert.ToChar(item);
+                                if (DiccionarioLZWCompresion.ContainsKey(CadenaAnalizada))
+                                {
+                                    CaracterActual = CadenaAnalizada;
+                                }
+                                else
+                                {
+                                    writer.Write(Convert.ToByte(DiccionarioLZWCompresion[CaracterActual]));
+                                    DiccionarioLZWCompresion.Add(CadenaAnalizada, DiccionarioLZWCompresion.Count + 1);
+                                    CaracterActual = Convert.ToChar(item).ToString();
+                                }
+                            }
                         }
+                        PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
+                        PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
+                        PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
+                        PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
+                        PropiedadesArchivoActual.FormatoCompresion = ".lzw";
+                        GuaradarCompresiones(PropiedadesArchivoActual);
                     }
                 }
             }
-            return View();
+            Success(string.Format("Archivo comprimido exitosamente"), true);
+            var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".lzw";
+            return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
         }
         public ActionResult DecompresionLZWImportar()
         {
@@ -101,7 +124,7 @@ namespace Lab1_ED2.Controllers
         {
             return View();
         }
-
+        #endregion 
         #region Huffman
         public ActionResult CompresionHImportar()
         {
@@ -491,7 +514,7 @@ namespace Lab1_ED2.Controllers
 
         #endregion
         #endregion
-
+        //Archivos en memoria secundaria
         List<PropiedadesArchivo> LeerMisCompresiones()
         {
             var Lista = new List<PropiedadesArchivo>();
