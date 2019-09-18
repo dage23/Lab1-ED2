@@ -20,7 +20,7 @@ namespace Lab1_ED2.Controllers
         public Dictionary<string, byte> DiccionarioIndices = new Dictionary<string, byte>();
         public string TextoEnBinario = "";
         public string nombreArchivo;
-
+        public Dictionary<string, int> DiccionarioLZWCompresion = new Dictionary<string, int>();
         public ActionResult Menu()
         {
             return View();
@@ -44,7 +44,6 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult CompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
         {
-            var DiccionarioCaracteresExistentes = new SortedDictionary<string,int>();
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
@@ -55,24 +54,43 @@ namespace Lab1_ED2.Controllers
             PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
             PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
-            var IndiceInit = 0;
-            using (var Lectura =new BinaryReader(ArchivoImportado.InputStream))
+            using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
             {
                 var byteBuffer = new byte[bufferLength];
-                while (Lectura.BaseStream.Position!=Lectura.BaseStream.Length)
+                while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                 {
                     byteBuffer = Lectura.ReadBytes(bufferLength);
                     foreach (var item in byteBuffer)
                     {
-                        if (!DiccionarioCaracteresExistentes.ContainsKey((Convert.ToChar(item)).ToString()))
+                        if (!DiccionarioLZWCompresion.ContainsKey((Convert.ToChar(item)).ToString()))
                         {
-                            DiccionarioCaracteresExistentes.Add((Convert.ToChar(item)).ToString(),IndiceInit);
-                            IndiceInit++;
+                            DiccionarioLZWCompresion.Add((Convert.ToChar(item)).ToString(), DiccionarioLZWCompresion.Count+1);
                         }
                     }
-                }                
+                }
+                Lectura.BaseStream.Position = 0;
+                var CaracterActual = string.Empty;
+                var Output = string.Empty;
+                while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                {
+                    byteBuffer = Lectura.ReadBytes(bufferLength);
+                    foreach (byte item in byteBuffer)
+                    {
+                        string wc = CaracterActual + Convert.ToChar(item);
+                        if (DiccionarioLZWCompresion.ContainsKey(wc))
+                        {
+                            CaracterActual = wc;
+                        }
+                        else
+                        {
+                            Output += (DiccionarioLZWCompresion[CaracterActual]);
+                            DiccionarioLZWCompresion.Add(wc, DiccionarioLZWCompresion.Count+1);
+                            CaracterActual = Convert.ToChar(item).ToString();
+                        }
+                    }
+                }
             }
-                return View();
+            return View();
         }
         public ActionResult DecompresionLZWImportar()
         {
@@ -83,6 +101,8 @@ namespace Lab1_ED2.Controllers
         {
             return View();
         }
+
+        #region Huffman
         public ActionResult CompresionHImportar()
         {
             return View();
@@ -190,9 +210,8 @@ namespace Lab1_ED2.Controllers
             Success(string.Format("Archivo comprimido exitosamente"), true);
             var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".huff";
             return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
-            
+
         }
-        
 
         public ActionResult DescompresionHImportar()
         {
@@ -211,7 +230,7 @@ namespace Lab1_ED2.Controllers
                 var extension = Path.GetExtension(ArchivoImportado.FileName);
                 ArchivoImportado.SaveAs(archivoLeer);
                 var Metadata = string.Empty;
-                
+
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
                 var DiccionarioDescompresion = new Dictionary<string, char>();
@@ -471,6 +490,7 @@ namespace Lab1_ED2.Controllers
         }
 
         #endregion
+        #endregion
 
         List<PropiedadesArchivo> LeerMisCompresiones()
         {
@@ -509,7 +529,7 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.RazonCompresion + "|" + Archivo.FactorCompresion + "|" + Archivo.PorcentajeReduccion+"|"+Archivo.FormatoCompresion);
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.RazonCompresion + "|" + Archivo.FactorCompresion + "|" + Archivo.PorcentajeReduccion + "|" + Archivo.FormatoCompresion);
                 writer.Close();
             }
 
