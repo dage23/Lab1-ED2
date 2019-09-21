@@ -11,6 +11,7 @@ namespace Lab1_ED2.Controllers
 
     public class HuffmanController : BaseController
     {
+        const int bufferLength=100;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public List<Caracter> ListaCaracteresFinales = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
@@ -41,7 +42,6 @@ namespace Lab1_ED2.Controllers
         {
             Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
             Directory.CreateDirectory(Server.MapPath("~/App_Data/Compresiones/"));
-            const int bufferLength = 20;
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
