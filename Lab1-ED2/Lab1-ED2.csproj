@@ -126,7 +126,6 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helper\Alertas.cs" />
-    <Compile Include="Helper\Datos.cs" />
     <Compile Include="Models\Caracter.cs" />
     <Compile Include="Models\Nodo.cs" />
     <Compile Include="Models\PropiedadesArchivo.cs" />
