@@ -39,7 +39,6 @@ namespace Lab1_ED2.Controllers
             return View();
         }
         //Compresiones
-        #region LZW
         public ActionResult CompresionLZWImportar()
         {
             return View();
@@ -47,6 +46,8 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult CompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
         {
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/Compresiones/"));
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
@@ -96,6 +97,7 @@ namespace Lab1_ED2.Controllers
                                 }
                                 else
                                 {
+                                    //Error al tratar de convertir numeros mayores de 256 a byte, echarle un ojo
                                     writer.Write(Convert.ToByte(DiccionarioLZWCompresion[CaracterActual]));
                                     DiccionarioLZWCompresion.Add(CadenaAnalizada, DiccionarioLZWCompresion.Count + 1);
                                     CaracterActual = Convert.ToChar(item).ToString();
@@ -103,8 +105,8 @@ namespace Lab1_ED2.Controllers
                             }
                         }
                         PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
-                        PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
-                        PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
+                        PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
+                        PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
                         PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
                         PropiedadesArchivoActual.FormatoCompresion = ".lzw";
                         GuaradarCompresiones(PropiedadesArchivoActual);
@@ -124,8 +126,6 @@ namespace Lab1_ED2.Controllers
         {
             return View();
         }
-        #endregion 
-        #region Huffman
         public ActionResult CompresionHImportar()
         {
             return View();
@@ -236,7 +236,6 @@ namespace Lab1_ED2.Controllers
             Success(string.Format("Archivo comprimido exitosamente"), true);
             var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".huff";
             return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
-
         }
 
         public ActionResult DescompresionHImportar()
@@ -474,22 +473,27 @@ namespace Lab1_ED2.Controllers
             string archivoLeer = string.Empty;
             string ArchivoMapeo = Server.MapPath("~/App_Data/");
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
-            using (var Lectura = new StreamReader(archivoLeer))
+            if (archivoLeer.Length<0)
             {
-                while (!Lectura.EndOfStream)
+                using (var Lectura = new StreamReader(archivoLeer))
                 {
-                    var Cadena = Lectura.ReadLine();
-                    var Auxiliar = new PropiedadesArchivo
+                    while (!Lectura.EndOfStream)
                     {
-                        NombreArchivoOriginal = Cadena.Split('|')[0],
-                        TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[2]),
-                        TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[1]),
-                        RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
-                        FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
-                        PorcentajeReduccion = Cadena.Split('|')[5]
-                    };
-                    Lista.Add(Auxiliar);
+                        var Cadena = Lectura.ReadLine();
+                        var Auxiliar = new PropiedadesArchivo
+                        {
+                            NombreArchivoOriginal = Cadena.Split('|')[0],
+                            TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[2]),
+                            TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[1]),
+                            RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
+                            FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
+                            PorcentajeReduccion = Cadena.Split('|')[5]
+                        };
+                        Lista.Add(Auxiliar);
+                    }
                 }
+                Danger("ERROR. NO se han realizado compresiones.", true);
+                return Lista;
             }
             return Lista;
         }
