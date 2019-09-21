@@ -11,7 +11,7 @@ namespace Lab1_ED2.Controllers
 
     public class HuffmanController : BaseController
     {
-        const int bufferLength=100;
+        const int bufferLength = 100;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public List<Caracter> ListaCaracteresFinales = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
@@ -225,9 +225,7 @@ namespace Lab1_ED2.Controllers
                                         }
                                     }
                                     catch (Exception)
-                                    {
-                                        Danger("Error! Un caracter no se ha podido reconocer", true);
-                                    }                                    
+                                    { }
                                 }
                                 ListaDeDecimalesFlotantes.Clear();
                             }
@@ -375,7 +373,7 @@ namespace Lab1_ED2.Controllers
                     }
                 }
             }
-        }      
+        }
 
         List<PropiedadesArchivo> LeerMisCompresiones()
         {
@@ -410,7 +408,7 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion+ "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion);
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion);
             }
         }
     }
