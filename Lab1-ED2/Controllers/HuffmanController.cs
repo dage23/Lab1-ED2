@@ -4,14 +4,13 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.IO;
-using System.Text;
 using Lab1_ED2.Models;
-using Lab1_ED2.Helper;
+
 namespace Lab1_ED2.Controllers
 {
+
     public class HuffmanController : BaseController
     {
-        const int bufferLength = 20;
         public List<Caracter> ListaCaracteresExistentes = new List<Caracter>();
         public List<Caracter> ListaCaracteresFinales = new List<Caracter>();
         public List<Nodo> ListaNodosArbol = new List<Nodo>();
@@ -40,6 +39,9 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult CompresionHImportar(HttpPostedFileBase ArchivoImportado)
         {
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/Compresiones/"));
+            const int bufferLength = 20;
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
@@ -62,13 +64,13 @@ namespace Lab1_ED2.Controllers
                 }
             }
             TotalDeCaracteres = ListaCaracteresExistentes.Count();
-            SumaCaracteres();
+            SumarCaracteres();
             //Crear Lista de Nodos
             CrearListaDeNodos();
             //Armar Arbol
             ArmarArbol();
             //Traducir A Binario
-            TraductorABinario();
+            TraducirABinario();
             while (TextoEnBinario.Length % 8 != 0)
             {
                 TextoEnBinario += "0";
@@ -130,26 +132,29 @@ namespace Lab1_ED2.Controllers
                         contador++;
                     }
                     PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
-                    PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
-                    PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
-                    PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
+                    PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
+                    PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
+                    PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.FactorCompresion).ToString();
+
                     GuaradarCompresiones(PropiedadesArchivoActual);
                 }
             }
             Success(string.Format("Archivo comprimido exitosamente"), true);
             var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".huff";
             return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
-            
+
         }
-        
 
         public ActionResult DescompresionHImportar()
         {
             return View();
         }
+
         [HttpPost]
         public ActionResult DescompresionHImportar(HttpPostedFileBase ArchivoImportado)
         {
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/Descompresiones/"));
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             var NombreNuevoArchivo = "";
@@ -160,7 +165,6 @@ namespace Lab1_ED2.Controllers
                 var extension = Path.GetExtension(ArchivoImportado.FileName);
                 ArchivoImportado.SaveAs(archivoLeer);
                 var Metadata = string.Empty;
-                
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
                 var DiccionarioDescompresion = new Dictionary<string, char>();
@@ -198,7 +202,11 @@ namespace Lab1_ED2.Controllers
                             {
                                 var Caracter = Bs.ReadByte();
                                 int Decimal = Convert.ToInt32(Caracter);
-                                var Binario = DecimalABinario(Decimal).ToCharArray();
+                                var Binario = Convert.ToString(Decimal, 2);
+                                while (Binario.Count() < 8)
+                                {
+                                    Binario = "0" + Binario;
+                                }
                                 for (int i = 0; i < Binario.Length; i++)
                                 {
                                     ListaDeDecimalesFlotantes.Add(Binario[i]);
@@ -217,7 +225,9 @@ namespace Lab1_ED2.Controllers
                                         }
                                     }
                                     catch (Exception)
-                                    { }
+                                    {
+                                        Danger("Error! Un caracter no se ha podido reconocer", true);
+                                    }                                    
                                 }
                                 ListaDeDecimalesFlotantes.Clear();
                             }
@@ -235,23 +245,26 @@ namespace Lab1_ED2.Controllers
             }
             else
             {
-                Danger("Formato de archivo no es 'huff'", true);
+                Danger("El archivo es nulo.", true);
             }
             var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
             return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
         }
-        #region CrearLista
+
         void IntroducirALista(byte[] CaracteresAux)
         {
             for (int i = 0; i < CaracteresAux.Length; i++)
             {
-                var ClaseAux = new Caracter();
-                ClaseAux.CaracterTexto = CaracteresAux[i];
-                ClaseAux.Frecuencia = 0;
+                var ClaseAux = new Caracter
+                {
+                    CaracterTexto = CaracteresAux[i],
+                    Frecuencia = 0
+                };
                 ListaCaracteresExistentes.Add(ClaseAux);
             }
         }
-        void SumaCaracteres()
+
+        void SumarCaracteres()
         {
             ListaCaracteresExistentes[0].Frecuencia = 1;
             ListaCaracteresExistentes[0].CaracterAUsar = true;
@@ -279,8 +292,7 @@ namespace Lab1_ED2.Controllers
                 }
             }
         }
-        #endregion
-        #region CrearListaDeNodos
+
         void CrearListaDeNodos()
         {
             int CantTotalCaracteres = ListaCaracteresFinales.Count;
@@ -294,56 +306,47 @@ namespace Lab1_ED2.Controllers
                 ListaNodosArbol.Add(NodoAux);
             }
         }
-        #endregion
-        #region ArmarArbol
+
         void ArmarArbol()
         {
             var MetodoCopara = new Comparar();
             //ordena la lista de mayor a menor
             int TamanoLista = ListaNodosArbol.Count;
-            try
+            while (ListaNodosArbol.Count() > 1)
             {
-                while (ListaNodosArbol[1] != null)
-                {
-                    ListaNodosArbol.Sort(MetodoCopara);
-                    var auxPadre = new Nodo();
-                    Nodo auxIzq = ListaNodosArbol[TamanoLista - 1];
-                    Nodo auxDcha = ListaNodosArbol[TamanoLista - 2];
-                    auxPadre.probabilidad = Convert.ToDouble(auxIzq.probabilidad) + Convert.ToDouble(auxDcha.probabilidad);
-                    auxPadre.NodoHijoDcha = auxDcha;
-                    auxPadre.NodoHijoIzq = auxIzq;
-                    auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
-                    auxPadre.NodoHijoDcha.NodoPadre = auxPadre;
+                ListaNodosArbol.Sort(MetodoCopara);
+                var auxPadre = new Nodo();
+                Nodo auxIzq = ListaNodosArbol[TamanoLista - 1];
+                Nodo auxDcha = ListaNodosArbol[TamanoLista - 2];
+                auxPadre.probabilidad = Convert.ToDouble(auxIzq.probabilidad) + Convert.ToDouble(auxDcha.probabilidad);
+                auxPadre.NodoHijoDcha = auxDcha;
+                auxPadre.NodoHijoIzq = auxIzq;
+                auxPadre.NodoHijoIzq.NodoPadre = auxPadre;
+                auxPadre.NodoHijoDcha.NodoPadre = auxPadre;
 
-                    ListaNodosArbol[TamanoLista - 2] = auxPadre;
-                    ListaNodosArbol.RemoveAt(TamanoLista - 1);
-                    TamanoLista = ListaNodosArbol.Count;
-                }
+                ListaNodosArbol[TamanoLista - 2] = auxPadre;
+                ListaNodosArbol.RemoveAt(TamanoLista - 1);
+                TamanoLista = ListaNodosArbol.Count;
             }
-            catch (Exception)
-            {
-                cNodoRaiz = ListaNodosArbol[0];
-                cNodoRaiz.enOrden(cNodoRaiz);
-                Diccionario(cNodoRaiz);
-            }
+            cNodoRaiz = ListaNodosArbol[0];
+            cNodoRaiz.enOrden(cNodoRaiz);
+            CrearDiccionario(cNodoRaiz);
+
         }
-        #endregion
-        #region crearDiccionario
-        void Diccionario(Nodo nNodo)
+
+        void CrearDiccionario(Nodo nNodo)
         {
             if (nNodo != null)
             {
                 if (nNodo.NodoHijoIzq == null)
                 {
-                    //diccionario += nNodo.caracter.CaracterTexto + nNodo.indice.ToString() + "|";
                     DiccionarioIndices.Add(nNodo.indice, nNodo.caracter.CaracterTexto);
                 }
-                Diccionario(nNodo.NodoHijoIzq);
-                Diccionario(nNodo.NodoHijoDcha);
+                CrearDiccionario(nNodo.NodoHijoIzq);
+                CrearDiccionario(nNodo.NodoHijoDcha);
             }
         }
-        #endregion
-        #region MetodoOrdenarNodos
+
         public class Comparar : IComparer<Nodo> // clase para ordenar la lista de nodos
         {
             public int Compare(Nodo N1, Nodo N2)
@@ -358,9 +361,8 @@ namespace Lab1_ED2.Controllers
 
             }
         }
-        #endregion
-        #region Traducir a Binario
-        void TraductorABinario()
+
+        void TraducirABinario()
         {
             for (int i = 0; i < ListaCaracteresExistentes.Count; i++)
             {
@@ -373,53 +375,7 @@ namespace Lab1_ED2.Controllers
                     }
                 }
             }
-        }
-        String DecimalABinario(int NUM)
-        {
-            int cont = 0;
-            bool bandera = false;
-            string regresa = "";
-            while (bandera == false)
-            {
-                int a = Convert.ToInt32(Math.Pow(2, cont));
-                if (NUM < a)
-                {
-                    bandera = true;
-                }
-                else
-                {
-                    cont++;
-                }
-            }
-            var suma = 0;
-            for (int i = cont - 1; i >= 0; i--)
-            {
-                int A = Convert.ToInt32(Math.Pow(2, i));
-                if (suma + A > NUM)
-                {
-                    regresa = regresa + "0";
-                }
-                else
-                {
-                    regresa = regresa + "1";
-                    suma += A;
-                }
-            }
-            if (regresa.Length != 8)
-            {
-                string Aux = "";
-                for (int i = regresa.Length; i < 8; i++)
-                {
-                    Aux = Aux + "0";
-                }
-                Aux = Aux + regresa;
-                regresa = Aux;
-            }
-            return regresa;
-
-        }
-
-        #endregion
+        }      
 
         List<PropiedadesArchivo> LeerMisCompresiones()
         {
@@ -427,29 +383,26 @@ namespace Lab1_ED2.Controllers
             string archivoLeer = string.Empty;
             string ArchivoMapeo = Server.MapPath("~/App_Data/");
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
-            try
+            using (var Lectura = new StreamReader(archivoLeer))
             {
-                using (var Lectura = new StreamReader(archivoLeer))
+                while (!Lectura.EndOfStream)
                 {
-                    while (!Lectura.EndOfStream)
+                    var Cadena = Lectura.ReadLine();
+                    var Auxiliar = new PropiedadesArchivo
                     {
-                        var Cadena = Lectura.ReadLine();
-                        var Auxiliar = new PropiedadesArchivo();
-                        Auxiliar.NombreArchivoOriginal = Cadena.Split('|')[0];
-                        Auxiliar.TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[1]);
-                        Auxiliar.TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[2]);
-                        Auxiliar.RazonCompresion = Convert.ToDouble(Cadena.Split('|')[3]);
-                        Auxiliar.FactorCompresion = Convert.ToDouble(Cadena.Split('|')[4]);
-                        Auxiliar.PorcentajeReduccion = Cadena.Split('|')[5];
-                        Lista.Add(Auxiliar);
-                    }
+                        NombreArchivoOriginal = Cadena.Split('|')[0],
+                        TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[2]),
+                        TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[1]),
+                        RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
+                        FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
+                        PorcentajeReduccion = Cadena.Split('|')[5]
+                    };
+                    Lista.Add(Auxiliar);
                 }
-            }
-            catch (Exception)
-            {
             }
             return Lista;
         }
+
         void GuaradarCompresiones(PropiedadesArchivo Archivo)
         {
             string archivoLeer = string.Empty;
@@ -457,11 +410,8 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.RazonCompresion + "|" + Archivo.FactorCompresion + "|" + Archivo.PorcentajeReduccion);
-                writer.Close();
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion+ "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion);
             }
-
-
         }
     }
 }
