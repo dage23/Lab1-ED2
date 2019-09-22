@@ -58,6 +58,9 @@ namespace Lab1_ED2.Controllers
             PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
             PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
+            var listaCaracteresExistentes = new List<string>();
+            var listaCaracteresEscribir = new List<int>();
+            var listaCaracteresBinario = new List<string>();
             using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
             {
                 using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Compresiones/" + nombreArchivo + ".lzw"), FileMode.OpenOrCreate))
@@ -70,15 +73,20 @@ namespace Lab1_ED2.Controllers
                             byteBuffer = Lectura.ReadBytes(bufferLength);
                             foreach (var item in byteBuffer)
                             {
-                                if (!DiccionarioLZWCompresion.ContainsKey((Convert.ToChar(item)).ToString()))
+                                if (!listaCaracteresExistentes.Contains((Convert.ToChar(item)).ToString()))
                                 {
-                                    DiccionarioLZWCompresion.Add((Convert.ToChar(item)).ToString(), DiccionarioLZWCompresion.Count + 1);
+                                    listaCaracteresExistentes.Add((Convert.ToChar(item)).ToString());
                                 }
                             }
                         }
+                        listaCaracteresExistentes.Sort();
+                        foreach (var item in listaCaracteresExistentes)
+                        {
+                            DiccionarioLZWCompresion.Add(item, DiccionarioLZWCompresion.Count + 1);
+                        }
                         foreach (var item in DiccionarioLZWCompresion)
                         {
-                            var Indice = ((item.Key)+(item.Value).ToString()+"|").ToCharArray();
+                            var Indice = ((item.Key)).ToCharArray();
                             writer.Write(Indice);
                         }
                         writer.Write("\r\n");
@@ -90,7 +98,7 @@ namespace Lab1_ED2.Controllers
                             byteBuffer = Lectura.ReadBytes(bufferLength);
                             foreach (byte item in byteBuffer)
                             {
-                                string CadenaAnalizada = CaracterActual + Convert.ToChar(item);
+                                var CadenaAnalizada = CaracterActual + Convert.ToChar(item);
                                 if (DiccionarioLZWCompresion.ContainsKey(CadenaAnalizada))
                                 {
                                     CaracterActual = CadenaAnalizada;
@@ -98,16 +106,59 @@ namespace Lab1_ED2.Controllers
                                 else
                                 {
                                     //Error al tratar de convertir numeros mayores de 256 a byte, echarle un ojo
-                                    writer.Write(Convert.ToByte(DiccionarioLZWCompresion[CaracterActual]));
+                                    listaCaracteresEscribir.Add(DiccionarioLZWCompresion[CaracterActual]);
+                                    //writer.Write(Convert.ToByte(DiccionarioLZWCompresion[CaracterActual]));
                                     DiccionarioLZWCompresion.Add(CadenaAnalizada, DiccionarioLZWCompresion.Count + 1);
                                     CaracterActual = Convert.ToChar(item).ToString();
                                 }
                             }
                         }
+                        var mayorIndice = listaCaracteresEscribir.Max();
+                        var bitsMayorIndice = (Convert.ToString(mayorIndice, 2)).Count();
+                        writer.Write(bitsMayorIndice.ToString().ToCharArray());
+                        writer.Write(Environment.NewLine);
+                        if (mayorIndice > 255)
+                        {
+                            foreach (var item in listaCaracteresEscribir)
+                            {
+                                var indiceBinario = Convert.ToString(item, 2);
+                                while (indiceBinario.Count() < bitsMayorIndice)
+                                {
+                                    indiceBinario = "0" + indiceBinario;
+                                }
+                                listaCaracteresBinario.Add(indiceBinario);
+                            }
+                            var cadenaBits = string.Empty;
+                            foreach (var item in listaCaracteresBinario)
+                            {
+                                for (int i = 0; i < item.Length; i++)
+                                {
+                                    if (cadenaBits.Count() < 8)
+                                    {
+                                        cadenaBits += item[i];
+                                    }
+                                    else
+                                    {
+                                        var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
+                                        var cadenaEnByte = Convert.ToByte(cadenaDecimal);
+                                        writer.Write(cadenaEnByte);
+                                        cadenaBits = string.Empty;
+                                        cadenaBits += item[i];
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            foreach (var item in listaCaracteresEscribir)
+                            {
+                                writer.Write(item);
+                            }
+                        }
                         PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
                         PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
                         PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
-                        PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.RazonCompresion).ToString();
+                        PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.FactorCompresion).ToString();
                         PropiedadesArchivoActual.FormatoCompresion = ".lzw";
                         GuaradarCompresiones(PropiedadesArchivoActual);
                     }
@@ -473,27 +524,23 @@ namespace Lab1_ED2.Controllers
             string archivoLeer = string.Empty;
             string ArchivoMapeo = Server.MapPath("~/App_Data/");
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
-            if (archivoLeer.Length<0)
+            using (var Lectura = new StreamReader(archivoLeer))
             {
-                using (var Lectura = new StreamReader(archivoLeer))
+                while (!Lectura.EndOfStream)
                 {
-                    while (!Lectura.EndOfStream)
+                    var Cadena = Lectura.ReadLine();
+                    var Auxiliar = new PropiedadesArchivo
                     {
-                        var Cadena = Lectura.ReadLine();
-                        var Auxiliar = new PropiedadesArchivo
-                        {
-                            NombreArchivoOriginal = Cadena.Split('|')[0],
-                            TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[2]),
-                            TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[1]),
-                            RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
-                            FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
-                            PorcentajeReduccion = Cadena.Split('|')[5]
-                        };
-                        Lista.Add(Auxiliar);
-                    }
+                        NombreArchivoOriginal = Cadena.Split('|')[0],
+                        TamanoArchivoComprimido = Convert.ToDouble(Cadena.Split('|')[2]),
+                        TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[1]),
+                        RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
+                        FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
+                        PorcentajeReduccion = Cadena.Split('|')[5],
+                        FormatoCompresion=Cadena.Split('|')[6]
+                    };
+                    Lista.Add(Auxiliar);
                 }
-                Danger("ERROR. NO se han realizado compresiones.", true);
-                return Lista;
             }
             return Lista;
         }
@@ -505,7 +552,7 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion);
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion + "|" + Archivo.FormatoCompresion);
             }
         }
     }
