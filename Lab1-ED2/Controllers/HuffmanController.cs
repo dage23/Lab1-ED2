@@ -20,7 +20,8 @@ namespace Lab1_ED2.Controllers
         public Dictionary<string, byte> DiccionarioIndices = new Dictionary<string, byte>();
         public string TextoEnBinario = "";
         public string nombreArchivo;
-
+        public Dictionary<string, int> DiccionarioLZWCompresion = new Dictionary<string, int>();
+        //Vistas
         public ActionResult Menu()
         {
             return View();
@@ -30,6 +31,151 @@ namespace Lab1_ED2.Controllers
             return View(LeerMisCompresiones());
         }
         public ActionResult MenuHuffman()
+        {
+            return View();
+        }
+        public ActionResult MenuLZW()
+        {
+            return View();
+        }
+        //Compresiones
+        public ActionResult CompresionLZWImportar()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult CompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
+        {
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/Compresiones/"));
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+            var extension = Path.GetExtension(ArchivoImportado.FileName);
+            ArchivoImportado.SaveAs(archivoLeer);
+            var PropiedadesArchivoActual = new PropiedadesArchivo();
+            FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+            PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
+            PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
+            nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
+            var listaCaracteresExistentes = new List<string>();
+            var listaCaracteresEscribir = new List<int>();
+            var listaCaracteresBinario = new List<string>();
+            using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
+            {
+                using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Compresiones/" + nombreArchivo + ".lzw"), FileMode.OpenOrCreate))
+                {
+                    using (var writer = new BinaryWriter(writeStream))
+                    {
+                        var byteBuffer = new byte[bufferLength];
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                        {
+                            byteBuffer = Lectura.ReadBytes(bufferLength);
+                            foreach (var item in byteBuffer)
+                            {
+                                if (!listaCaracteresExistentes.Contains((Convert.ToChar(item)).ToString()))
+                                {
+                                    listaCaracteresExistentes.Add((Convert.ToChar(item)).ToString());
+                                }
+                            }
+                        }
+                        listaCaracteresExistentes.Sort();
+                        foreach (var item in listaCaracteresExistentes)
+                        {
+                            DiccionarioLZWCompresion.Add(item, DiccionarioLZWCompresion.Count + 1);
+                        }
+                        foreach (var item in DiccionarioLZWCompresion)
+                        {
+                            var Indice = ((item.Key)).ToCharArray();
+                            writer.Write(Indice);
+                        }
+                        writer.Write("\r\n");
+                        Lectura.BaseStream.Position = 0;
+                        var CaracterActual = string.Empty;
+                        var Output = string.Empty;
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                        {
+                            byteBuffer = Lectura.ReadBytes(bufferLength);
+                            foreach (byte item in byteBuffer)
+                            {
+                                var CadenaAnalizada = CaracterActual + Convert.ToChar(item);
+                                if (DiccionarioLZWCompresion.ContainsKey(CadenaAnalizada))
+                                {
+                                    CaracterActual = CadenaAnalizada;
+                                }
+                                else
+                                {
+                                    //Error al tratar de convertir numeros mayores de 256 a byte, echarle un ojo
+                                    listaCaracteresEscribir.Add(DiccionarioLZWCompresion[CaracterActual]);
+                                    //writer.Write(Convert.ToByte(DiccionarioLZWCompresion[CaracterActual]));
+                                    DiccionarioLZWCompresion.Add(CadenaAnalizada, DiccionarioLZWCompresion.Count + 1);
+                                    CaracterActual = Convert.ToChar(item).ToString();
+                                }
+                            }
+                        }
+                        var mayorIndice = listaCaracteresEscribir.Max();
+                        var bitsMayorIndice = (Convert.ToString(mayorIndice, 2)).Count();
+                        writer.Write(bitsMayorIndice.ToString().ToCharArray());
+                        writer.Write(extension.ToCharArray());
+                        writer.Write(Environment.NewLine);
+                        if (mayorIndice > 255)
+                        {
+                            foreach (var item in listaCaracteresEscribir)
+                            {
+                                var indiceBinario = Convert.ToString(item, 2);
+                                while (indiceBinario.Count() < bitsMayorIndice)
+                                {
+                                    indiceBinario = "0" + indiceBinario;
+                                }
+                                listaCaracteresBinario.Add(indiceBinario);
+                            }
+                            var cadenaBits = string.Empty;
+                            foreach (var item in listaCaracteresBinario)
+                            {
+                                for (int i = 0; i < item.Length; i++)
+                                {
+                                    if (cadenaBits.Count() < 8)
+                                    {
+                                        cadenaBits += item[i];
+                                    }
+                                    else
+                                    {
+                                        var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
+                                        var cadenaEnByte = Convert.ToByte(cadenaDecimal);
+                                        //writer.Write(cadenaEnByte);
+                                        writer.Write(Convert.ToChar(cadenaEnByte));
+                                        cadenaBits = string.Empty;
+                                        cadenaBits += item[i];
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            foreach (var item in listaCaracteresEscribir)
+                            {
+                                writer.Write(Convert.ToChar(item));
+                            }
+                        }
+                        PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
+                        PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
+                        PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
+                        PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.FactorCompresion).ToString();
+                        PropiedadesArchivoActual.FormatoCompresion = ".lzw";
+                        GuaradarCompresiones(PropiedadesArchivoActual);
+                    }
+                }
+            }
+            Success(string.Format("Archivo comprimido exitosamente"), true);
+            var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".lzw";
+            return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
+        }
+        public ActionResult DecompresionLZWImportar()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult DecompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
         {
             return View();
         }
@@ -135,6 +281,7 @@ namespace Lab1_ED2.Controllers
                     PropiedadesArchivoActual.FactorCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido);
                     PropiedadesArchivoActual.RazonCompresion = Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoDescomprimido) / Convert.ToDouble(PropiedadesArchivoActual.TamanoArchivoComprimido);
                     PropiedadesArchivoActual.PorcentajeReduccion = (Convert.ToDouble(1) - PropiedadesArchivoActual.FactorCompresion).ToString();
+                    PropiedadesArchivoActual.FormatoCompresion = ".huff";
 
                     GuaradarCompresiones(PropiedadesArchivoActual);
                 }
@@ -142,7 +289,6 @@ namespace Lab1_ED2.Controllers
             Success(string.Format("Archivo comprimido exitosamente"), true);
             var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".huff";
             return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
-
         }
 
         public ActionResult DescompresionHImportar()
@@ -374,7 +520,6 @@ namespace Lab1_ED2.Controllers
                 }
             }
         }
-
         List<PropiedadesArchivo> LeerMisCompresiones()
         {
             var Lista = new List<PropiedadesArchivo>();
@@ -393,7 +538,8 @@ namespace Lab1_ED2.Controllers
                         TamanoArchivoDescomprimido = Convert.ToDouble(Cadena.Split('|')[1]),
                         RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
                         FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
-                        PorcentajeReduccion = Cadena.Split('|')[5]
+                        PorcentajeReduccion = Cadena.Split('|')[5],
+                        FormatoCompresion=Cadena.Split('|')[6]
                     };
                     Lista.Add(Auxiliar);
                 }
@@ -408,7 +554,7 @@ namespace Lab1_ED2.Controllers
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion);
+                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion + "|" + Archivo.FormatoCompresion);
             }
         }
     }

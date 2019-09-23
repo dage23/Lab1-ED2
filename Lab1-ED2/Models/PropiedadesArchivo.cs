@@ -20,5 +20,7 @@ namespace Lab1_ED2.Models
         public double FactorCompresion { get; set; }
         [Display(Name = "Porcentaje de Reduccion")]
         public string PorcentajeReduccion { get; set; }
+        [Display(Name ="Formato de Compresion")]
+        public string FormatoCompresion { get; set; }
     }
 }

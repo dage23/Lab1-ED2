@@ -127,6 +127,7 @@
     </Compile>
     <Compile Include="Helper\Alertas.cs" />
     <Compile Include="Models\Caracter.cs" />
+    <Compile Include="Models\CaracterLzw.cs" />
     <Compile Include="Models\Nodo.cs" />
     <Compile Include="Models\PropiedadesArchivo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -170,6 +171,9 @@
     <Content Include="Views\Huffman\VerMisCompresiones.cshtml" />
     <Content Include="Views\Huffman\DescompresionHImportar.cshtml" />
     <Content Include="Views\Shared\_Alerts.cshtml" />
+    <Content Include="Views\Huffman\MenuLZW.cshtml" />
+    <Content Include="Views\Huffman\CompresionLZWImportar.cshtml" />
+    <Content Include="Views\Huffman\DescompresionLZWImportar.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
