@@ -116,6 +116,7 @@ namespace Lab1_ED2.Controllers
                         var mayorIndice = listaCaracteresEscribir.Max();
                         var bitsMayorIndice = (Convert.ToString(mayorIndice, 2)).Count();
                         writer.Write(bitsMayorIndice.ToString().ToCharArray());
+                        writer.Write(extension.ToCharArray());
                         writer.Write(Environment.NewLine);
                         if (mayorIndice > 255)
                         {
@@ -141,7 +142,8 @@ namespace Lab1_ED2.Controllers
                                     {
                                         var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
                                         var cadenaEnByte = Convert.ToByte(cadenaDecimal);
-                                        writer.Write(cadenaEnByte);
+                                        //writer.Write(cadenaEnByte);
+                                        writer.Write(Convert.ToChar(cadenaEnByte));
                                         cadenaBits = string.Empty;
                                         cadenaBits += item[i];
                                     }
@@ -152,7 +154,7 @@ namespace Lab1_ED2.Controllers
                         {
                             foreach (var item in listaCaracteresEscribir)
                             {
-                                writer.Write(item);
+                                writer.Write(Convert.ToChar(item));
                             }
                         }
                         PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
