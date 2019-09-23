@@ -177,7 +177,36 @@ namespace Lab1_ED2.Controllers
         [HttpPost]
         public ActionResult DecompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
         {
-            return View();
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/Descompresiones/"));
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            var NombreNuevoArchivo = "";
+            var ExtensionNuevoArchivo = "";
+            if (ArchivoImportado != null)
+            {
+                archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+                var extension = Path.GetExtension(ArchivoImportado.FileName);
+                ArchivoImportado.SaveAs(archivoLeer);
+                var Metadata = string.Empty;
+                var CantidadCaracteresCOnvertir = string.Empty;
+                var DiccionarioText = string.Empty;
+                var DiccionarioDescompresion = new Dictionary<string, char>();
+                if (extension == ".lzw")
+                {
+                    
+                }
+                else
+                {
+                    Danger("Formato de archivo no es 'huff'", true);
+                }
+            }
+            else
+            {
+                Danger("El archivo es nulo.", true);
+            }
+            var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
+            return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
         }
         public ActionResult CompresionHImportar()
         {
