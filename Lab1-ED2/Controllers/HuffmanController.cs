@@ -212,6 +212,16 @@ namespace Lab1_ED2.Controllers
                             DiccionarioCaracteres.Add(ContadorDiccionario, Lectura.ReadByte());
                             ContadorDiccionario++;
                         }
+                        Lectura.ReadByte();
+                        Lectura.ReadByte();
+                        Lectura.ReadByte();
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        var TamanoBits = string.Empty;
+                        while (CaracterDiccionario != '.')
+                        {
+                            TamanoBits += CaracterDiccionario;
+                            CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        }
                         #region Ocultar
                         //using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + nombreArchivo + ".lzw"), FileMode.OpenOrCreate))
                         //{
