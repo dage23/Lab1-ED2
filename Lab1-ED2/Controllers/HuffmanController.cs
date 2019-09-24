@@ -58,7 +58,7 @@ namespace Lab1_ED2.Controllers
             PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
             PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
-            var listaCaracteresExistentes = new List<string>();
+            var listaCaracteresExistentes = new List<byte>();
             var listaCaracteresEscribir = new List<int>();
             var listaCaracteresBinario = new List<string>();
             using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
@@ -73,22 +73,23 @@ namespace Lab1_ED2.Controllers
                             byteBuffer = Lectura.ReadBytes(bufferLength);
                             foreach (var item in byteBuffer)
                             {
-                                if (!listaCaracteresExistentes.Contains((Convert.ToChar(item)).ToString()))
+                                if (!listaCaracteresExistentes.Contains(item))
                                 {
-                                    listaCaracteresExistentes.Add((Convert.ToChar(item)).ToString());
+                                    listaCaracteresExistentes.Add(item);
                                 }
                             }
                         }
                         listaCaracteresExistentes.Sort();
                         foreach (var item in listaCaracteresExistentes)
                         {
-                            DiccionarioLZWCompresion.Add(item, DiccionarioLZWCompresion.Count + 1);
+                            var caractreres = Convert.ToChar(item);
+                            DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
                         }
                         var A = Convert.ToString( DiccionarioLZWCompresion.LongCount()) + ".";
                         writer.Write(A.ToCharArray());
-                        foreach (var item in DiccionarioLZWCompresion)
+                        foreach (var item in listaCaracteresExistentes)
                         {
-                            var Indice = ((item.Key)).ToCharArray();
+                            var Indice = Convert.ToChar(item);
                             writer.Write(Indice);
                         }
                         writer.Write("\r\n");
@@ -156,7 +157,8 @@ namespace Lab1_ED2.Controllers
                         {
                             foreach (var item in listaCaracteresEscribir)
                             {
-                                writer.Write(Convert.ToChar(item));
+                                var ByteAGuardar = Convert.ToByte(item);
+                                writer.Write(ByteAGuardar);
                             }
                         }
                         PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
@@ -209,8 +211,12 @@ namespace Lab1_ED2.Controllers
                         CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
                         while (DiccionarioCaracteres.LongCount()!= Convert.ToInt64(TamanoDiccionario))
                         {
-                            DiccionarioCaracteres.Add(ContadorDiccionario, Lectura.ReadByte());
-                            ContadorDiccionario++;
+                            var A = Lectura.ReadByte();
+                            if (!DiccionarioCaracteres.ContainsValue(Convert.ToByte(A)))
+                            {
+                                DiccionarioCaracteres.Add(ContadorDiccionario, A);
+                                ContadorDiccionario++;
+                            }
                         }
                         Lectura.ReadByte();
                         Lectura.ReadByte();
