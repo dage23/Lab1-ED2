@@ -48,13 +48,13 @@ namespace Lab1_ED2.Controllers
         {
             Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
             Directory.CreateDirectory(Server.MapPath("~/App_Data/Compresiones/"));
-            var archivoLeer = string.Empty;
+            var DireccionArchivo = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
-            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+            DireccionArchivo = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
             var extension = Path.GetExtension(ArchivoImportado.FileName);
-            ArchivoImportado.SaveAs(archivoLeer);
+            ArchivoImportado.SaveAs(DireccionArchivo);
             var PropiedadesArchivoActual = new PropiedadesArchivo();
-            FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+            FileInfo ArchivoAnalizado = new FileInfo(DireccionArchivo);
             PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
             PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
@@ -85,14 +85,14 @@ namespace Lab1_ED2.Controllers
                             var caractreres = Convert.ToChar(item);
                             DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
                         }
-                        var A = Convert.ToString( DiccionarioLZWCompresion.LongCount()) + ".";
+                        var A = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
                         writer.Write(A.ToCharArray());
                         foreach (var item in listaCaracteresExistentes)
                         {
-                            var Indice = Convert.ToChar(item);
+                            var Indice = Convert.ToByte(item);
                             writer.Write(Indice);
                         }
-                        writer.Write("\r\n");
+                        writer.Write(Environment.NewLine);
                         Lectura.BaseStream.Position = 0;
                         var CaracterActual = string.Empty;
                         var Output = string.Empty;
@@ -143,10 +143,10 @@ namespace Lab1_ED2.Controllers
                                     }
                                     else
                                     {
-                                        var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
+                                        var cadenaDecimal = Convert.ToInt64(cadenaBits, 2);
                                         var cadenaEnByte = Convert.ToByte(cadenaDecimal);
                                         //writer.Write(cadenaEnByte);
-                                        writer.Write(Convert.ToChar(cadenaEnByte));
+                                        writer.Write((cadenaEnByte));
                                         cadenaBits = string.Empty;
                                         cadenaBits += item[i];
                                     }
@@ -195,12 +195,13 @@ namespace Lab1_ED2.Controllers
                 var Metadata = string.Empty;
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
-                var DiccionarioCaracteres = new Dictionary<int, byte>();
+                var DiccionarioCaracteres = new Dictionary<int, string>();
+                var byteBuffer = new byte[bufferLength];
                 if (extension == ".lzw")
                 {
                     using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
                     {
-                        var ContadorDiccionario = 1;
+                        //var ContadorDiccionario = 1;
                         var CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         var TamanoDiccionario = string.Empty;
                         while (CaracterDiccionario != '.')
@@ -209,13 +210,13 @@ namespace Lab1_ED2.Controllers
                             CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         }
                         CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
-                        while (DiccionarioCaracteres.LongCount()!= Convert.ToInt64(TamanoDiccionario))
+                        while (DiccionarioCaracteres.LongCount() != Convert.ToInt64(TamanoDiccionario))
                         {
                             var A = Lectura.ReadByte();
-                            if (!DiccionarioCaracteres.ContainsValue(Convert.ToByte(A)))
+                            if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(A))))
                             {
-                                DiccionarioCaracteres.Add(ContadorDiccionario, A);
-                                ContadorDiccionario++;
+                                DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, Convert.ToString(Convert.ToChar(A)));
+                                //ContadorDiccionario++;
                             }
                         }
                         Lectura.ReadByte();
@@ -223,10 +224,38 @@ namespace Lab1_ED2.Controllers
                         Lectura.ReadByte();
                         CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         var TamanoBits = string.Empty;
+                        var extensionArchivo = string.Empty;
                         while (CaracterDiccionario != '.')
                         {
                             TamanoBits += CaracterDiccionario;
                             CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        }
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        while (CaracterDiccionario != '\u0002')
+                        {
+                            extensionArchivo += CaracterDiccionario;
+                            CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        }
+                        var byteAnalizado = string.Empty;
+                        var listaCaracteresComprimidos = new List<int>();
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                        {
+                            var byteLeido = Lectura.ReadByte();
+                            byteAnalizado += Convert.ToString(Convert.ToInt32(byteLeido), 2);
+                            while (byteAnalizado.Length!=8)
+                            {
+                                byteAnalizado = "0" + byteAnalizado;
+                            }
+                            if (byteAnalizado.Length >= Convert.ToInt32(TamanoBits))
+                            {
+                                var caracterComprimido = string.Empty;
+                                for (int i = 0; i < Convert.ToInt32(TamanoBits); i++)
+                                {
+                                    caracterComprimido += byteAnalizado[i];
+                                }
+                                listaCaracteresComprimidos.Add(Convert.ToInt32(caracterComprimido));
+                                caracterComprimido = string.Empty;
+                            }
                         }
                         #region Ocultar
                         //using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + nombreArchivo + ".lzw"), FileMode.OpenOrCreate))
@@ -708,7 +737,7 @@ namespace Lab1_ED2.Controllers
                         RazonCompresion = Convert.ToDouble(Cadena.Split('|')[4]),
                         FactorCompresion = Convert.ToDouble(Cadena.Split('|')[3]),
                         PorcentajeReduccion = Cadena.Split('|')[5],
-                        FormatoCompresion=Cadena.Split('|')[6]
+                        FormatoCompresion = Cadena.Split('|')[6]
                     };
                     Lista.Add(Auxiliar);
                 }
