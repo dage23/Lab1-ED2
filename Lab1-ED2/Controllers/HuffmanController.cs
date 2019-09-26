@@ -170,13 +170,139 @@ namespace Lab1_ED2.Controllers
             var FileVirtualPath = @"~/App_Data/Compresiones/" + nombreArchivo + ".lzw";
             return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
         }
-        public ActionResult DecompresionLZWImportar()
+        public ActionResult DescompresionLZWImportar()
         {
             return View();
         }
         [HttpPost]
-        public ActionResult DecompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
+        public ActionResult DescompresionLZWImportar(HttpPostedFileBase ArchivoImportado)
         {
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
+            Directory.CreateDirectory(Server.MapPath("~/App_Data/Descompresiones/"));
+            var archivoLeer = string.Empty;
+            var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
+            var NombreNuevoArchivo = "";
+            var ExtensionNuevoArchivo = "";
+            if (ArchivoImportado != null && extension == ".lzw")
+            {
+                archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+                var NombreDelArchivo = Path.GetFileNameWithoutExtension(ArchivoImportado.Filename);
+                ArchivoImportado.SaveAs(archivoLeer);
+                var Metadata = string.Empty;
+                var CantidadCaracteresCOnvertir = string.Empty;
+                var DiccionarioText = string.Empty;
+                var DiccionarioCaracteres = new Dictionary<int, string>();
+                var byteBuffer = new byte[bufferLength];
+                using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
+                {
+                    //var ContadorDiccionario = 1;
+                    var CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                    var TamanoDiccionario = string.Empty;
+                    while (CaracterDiccionario != '.')
+                    {
+                        TamanoDiccionario += CaracterDiccionario;
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                    }
+                    CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
+                    while (DiccionarioCaracteres.LongCount() != Convert.ToInt64(TamanoDiccionario))
+                    {
+                        var A = Lectura.ReadByte();
+                        if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(A))))
+                        {
+                            DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, Convert.ToString(Convert.ToChar(A)));
+                            //ContadorDiccionario++;
+                        }
+                    }
+                    Lectura.ReadByte();
+                    Lectura.ReadByte();
+                    Lectura.ReadByte();
+                    CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                    var TamanoBits = string.Empty;
+                    var extensionArchivo = string.Empty;
+                    while (CaracterDiccionario != '.')
+                    {
+                        TamanoBits += CaracterDiccionario;
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                    }
+                    CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                    while (CaracterDiccionario != '\u0002')
+                    {
+                        extensionArchivo += CaracterDiccionario;
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                    }
+                    Lectura.ReadByte();
+                    Lectura.ReadByte();
+                    using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreDelArchivo + extensionArchivo), FileMode.OpenOrCreate))
+                    {
+                        using (var writer = new BinaryWriter(writeStream))
+                        {
+                            var ListaNumFlotantes = new List<char>();
+                            var numRetenido = string.Empty;
+                            var Anterior = string.Empty;
+                            while (Lectura.PeekChar()!=null)
+                            {
+                                var Caracter = Lectura.ReadByte();
+                                int Decimal = Convert.ToInt32(Caracter);
+                                var Binario = Convert.ToString(Decimal, 2);
+                                foreach (var item in Binario.ToCharArray())
+                                {
+                                    ListaNumFlotantes.Add(item);
+                                }
+                                if (ListaNumFlotantes.Count>TamanoBits)
+                                {
+                                    Binario = string.Empty;
+                                    for (int i = 0; i < TamanoBits; i++)
+                                    {
+                                        Binario = Binario + ListaNumFlotantes[0];
+                                        ListaNumFlotantes.Remove[0];
+                                    }
+                                    var NumDecimal = Convert.ToString(Binario, 10);
+                                    var ByteObtenido = Convert.ToByte(Convert.ToInt32(NumDecimal));
+                                    var charResultante = Convert.ToChar(ByteObtenido);
+                                    
+                                }
+
+
+
+
+
+
+                                for (int i = 0; i < Binario.Length; i++)
+                                {
+                                    ListaDeDecimalesFlotantes.Add(Binario[i]);
+                                }
+
+                                foreach (var item in ListaDeDecimalesFlotantes)
+                                {
+                                    numRetenido = numRetenido + Convert.ToString(item);
+                                    try
+                                    {
+                                        if (ContadordeCaracteres != 0)
+                                        {
+                                            writer.Write(DiccionarioDescompresion[numRetenido]);
+                                            numRetenido = "";
+                                            ContadordeCaracteres--;
+                                        }
+                                    }
+                                    catch (Exception)
+                                    { }
+                                }
+                                ListaDeDecimalesFlotantes.Clear();
+                            }
+                        }
+                    }
+                }
+
+
+
+            }
+            else
+            {
+                Danger("No se puede descomprimir.", true);
+            }
+            var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
+            //return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
+
             return View();
         }
         public ActionResult CompresionHImportar()
