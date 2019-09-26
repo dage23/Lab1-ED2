@@ -48,17 +48,17 @@ namespace Lab1_ED2.Controllers
         {
             Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
             Directory.CreateDirectory(Server.MapPath("~/App_Data/Compresiones/"));
-            var archivoLeer = string.Empty;
+            var DireccionArchivo = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
-            archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+            DireccionArchivo = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
             var extension = Path.GetExtension(ArchivoImportado.FileName);
-            ArchivoImportado.SaveAs(archivoLeer);
+            ArchivoImportado.SaveAs(DireccionArchivo);
             var PropiedadesArchivoActual = new PropiedadesArchivo();
             FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
             PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
             PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
-            var listaCaracteresExistentes = new List<string>();
+            var listaCaracteresExistentes = new List<byte>();
             var listaCaracteresEscribir = new List<int>();
             var listaCaracteresBinario = new List<string>();
             using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
@@ -73,23 +73,26 @@ namespace Lab1_ED2.Controllers
                             byteBuffer = Lectura.ReadBytes(bufferLength);
                             foreach (var item in byteBuffer)
                             {
-                                if (!listaCaracteresExistentes.Contains((Convert.ToChar(item)).ToString()))
+                                if (!listaCaracteresExistentes.Contains(item))
                                 {
-                                    listaCaracteresExistentes.Add((Convert.ToChar(item)).ToString());
+                                    listaCaracteresExistentes.Add(item);
                                 }
                             }
                         }
                         listaCaracteresExistentes.Sort();
                         foreach (var item in listaCaracteresExistentes)
                         {
-                            DiccionarioLZWCompresion.Add(item, DiccionarioLZWCompresion.Count + 1);
-                        }
-                        foreach (var item in DiccionarioLZWCompresion)
+                            var caractreres = Convert.ToChar(item);
+                            DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
+                        }                      
+                        var A = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
+                        writer.Write(A.ToCharArray()); 
+                        foreach (var item in listaCaracteresExistentes)
                         {
-                            var Indice = ((item.Key)).ToCharArray();
+                            var Indice = Convert.ToByte(item);
                             writer.Write(Indice);
                         }
-                        writer.Write("\r\n");
+                        writer.Write(Environment.NewLine);
                         Lectura.BaseStream.Position = 0;
                         var CaracterActual = string.Empty;
                         var Output = string.Empty;
@@ -105,9 +108,7 @@ namespace Lab1_ED2.Controllers
                                 }
                                 else
                                 {
-                                    //Error al tratar de convertir numeros mayores de 256 a byte, echarle un ojo
                                     listaCaracteresEscribir.Add(DiccionarioLZWCompresion[CaracterActual]);
-                                    //writer.Write(Convert.ToByte(DiccionarioLZWCompresion[CaracterActual]));
                                     DiccionarioLZWCompresion.Add(CadenaAnalizada, DiccionarioLZWCompresion.Count + 1);
                                     CaracterActual = Convert.ToChar(item).ToString();
                                 }
@@ -142,7 +143,6 @@ namespace Lab1_ED2.Controllers
                                     {
                                         var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
                                         var cadenaEnByte = Convert.ToByte(cadenaDecimal);
-                                        //writer.Write(cadenaEnByte);
                                         writer.Write(Convert.ToChar(cadenaEnByte));
                                         cadenaBits = string.Empty;
                                         cadenaBits += item[i];
