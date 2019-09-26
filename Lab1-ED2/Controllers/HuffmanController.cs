@@ -143,18 +143,24 @@ namespace Lab1_ED2.Controllers
                                     {
                                         var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
                                         var cadenaEnByte = Convert.ToByte(cadenaDecimal);
-                                        writer.Write(Convert.ToChar(cadenaEnByte));
+                                        writer.Write((cadenaEnByte));
                                         cadenaBits = string.Empty;
                                         cadenaBits += item[i];
                                     }
                                 }
+                            }
+                            if (cadenaBits.Length>0)
+                            {
+                                var cadenaRestante = Convert.ToInt64(cadenaBits, 2);
+                                writer.Write(Convert.ToByte(cadenaRestante));
                             }
                         }
                         else
                         {
                             foreach (var item in listaCaracteresEscribir)
                             {
-                                writer.Write(Convert.ToChar(item));
+                                var ByteAGuardar = Convert.ToByte(item);
+                                writer.Write(ByteAGuardar);              
                             }
                         }
                         PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
