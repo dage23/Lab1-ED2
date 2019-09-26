@@ -54,7 +54,7 @@ namespace Lab1_ED2.Controllers
             var extension = Path.GetExtension(ArchivoImportado.FileName);
             ArchivoImportado.SaveAs(DireccionArchivo);
             var PropiedadesArchivoActual = new PropiedadesArchivo();
-            FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+            FileInfo ArchivoAnalizado = new FileInfo(DireccionArchivo);
             PropiedadesArchivoActual.TamanoArchivoDescomprimido = ArchivoAnalizado.Length;
             PropiedadesArchivoActual.NombreArchivoOriginal = ArchivoAnalizado.Name;
             nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
