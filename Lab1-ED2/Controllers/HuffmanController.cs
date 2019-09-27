@@ -181,18 +181,19 @@ namespace Lab1_ED2.Controllers
             Directory.CreateDirectory(Server.MapPath("~/App_Data/Descompresiones/"));
             var archivoLeer = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
-            var NombreNuevoArchivo = "";
-            var ExtensionNuevoArchivo = "";
+            var ExtensionNuevoArchivo = string.Empty;
+            var extensionArchivo = string.Empty;
             if (ArchivoImportado != null)
             {
                 archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
                 var extension = Path.GetExtension(ArchivoImportado.FileName);
                 ArchivoImportado.SaveAs(archivoLeer);
-                var Metadata = string.Empty;
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
                 var DiccionarioCaracteres = new Dictionary<int, string>();
                 var byteBuffer = new byte[bufferLength];
+                FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+                nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
                 if (extension == ".lzw")
                 {
                     using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
@@ -220,7 +221,7 @@ namespace Lab1_ED2.Controllers
                         Lectura.ReadByte();
                         CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         var TamanoBits = string.Empty;
-                        var extensionArchivo = string.Empty;
+                        
                         while (CaracterDiccionario != '.')
                         {
                             TamanoBits += CaracterDiccionario;
@@ -278,7 +279,7 @@ namespace Lab1_ED2.Controllers
                         var primerCaracter = DiccionarioCaracteres[listaCaracteresComprimidos[0]];
                         listaCaracteresComprimidos.RemoveAt(0);
                         var decompressed = new System.Text.StringBuilder(primerCaracter);
-                        using (var ArchivoNuevo = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + extensionArchivo), FileMode.OpenOrCreate))
+                        using (var ArchivoNuevo = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + nombreArchivo + extensionArchivo), FileMode.OpenOrCreate))
                         {
                             using (var writer = new StreamWriter(ArchivoNuevo))
                             {
@@ -302,26 +303,20 @@ namespace Lab1_ED2.Controllers
                         }
                     }
                 }
+                else
+                {
+                Danger("Formato de archivo no es '.lzw'", true);
+                }
+            }
             else
             {
-                Danger("Formato de archivo no es '.lzw'", true);
-            }
-        }
-        else
-        {
                Danger("El archivo es nulo.", true);
+            }
+            var FileVirtualPath = @"~/App_Data/Descompresiones/" + nombreArchivo + extensionArchivo;
+            return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
         }
-        var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
-           //return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
-           return View();
-        }
 
-
-
-
-
-
-
+        
         public ActionResult CompresionHImportar()
         {
             return View();
