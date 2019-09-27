@@ -84,9 +84,9 @@ namespace Lab1_ED2.Controllers
                         {
                             var caractreres = Convert.ToChar(item);
                             DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
-                        }                      
+                        }
                         var A = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
-                        writer.Write(A.ToCharArray()); 
+                        writer.Write(A.ToCharArray());
                         foreach (var item in listaCaracteresExistentes)
                         {
                             var Indice = Convert.ToByte(item);
@@ -141,7 +141,7 @@ namespace Lab1_ED2.Controllers
                                     }
                                     else
                                     {
-                                        var cadenaDecimal = Convert.ToInt64(cadenaBits,2);
+                                        var cadenaDecimal = Convert.ToInt64(cadenaBits, 2);
                                         var cadenaEnByte = Convert.ToByte(cadenaDecimal);
                                         writer.Write(Convert.ToChar(cadenaEnByte));
                                         cadenaBits = string.Empty;
@@ -230,71 +230,53 @@ namespace Lab1_ED2.Controllers
                         extensionArchivo += CaracterDiccionario;
                         CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                     }
+                    extensionArchivo = "." + extensionArchivo;
+                    var byteAnalizado = string.Empty;
+                    var listaCaracteresComprimidos = new List<int>();
                     Lectura.ReadByte();
                     Lectura.ReadByte();
-                    using (var writeStream = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreDelArchivo + extensionArchivo), FileMode.OpenOrCreate))
+                    while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
                     {
-                        using (var writer = new BinaryWriter(writeStream))
+                        var byteLeido = Convert.ToString(Lectura.ReadByte(), 2);
+                        if (Lectura.BaseStream.Position == Lectura.BaseStream.Length)
                         {
-                            var ListaNumFlotantes = new List<char>();
-                            var numRetenido = string.Empty;
-                            var Anterior = string.Empty;
-                            while (Lectura.PeekChar()!=null)
+                            while (byteLeido.Length < 7)
                             {
-                                var Caracter = Lectura.ReadByte();
-                                int Decimal = Convert.ToInt32(Caracter);
-                                var Binario = Convert.ToString(Decimal, 2);
-                                foreach (var item in Binario.ToCharArray())
-                                {
-                                    ListaNumFlotantes.Add(item);
-                                }
-                                if (ListaNumFlotantes.Count>TamanoBits)
-                                {
-                                    Binario = string.Empty;
-                                    for (int i = 0; i < TamanoBits; i++)
-                                    {
-                                        Binario = Binario + ListaNumFlotantes[0];
-                                        ListaNumFlotantes.Remove[0];
-                                    }
-                                    var NumDecimal = Convert.ToString(Binario, 10);
-                                    var ByteObtenido = Convert.ToByte(Convert.ToInt32(NumDecimal));
-                                    var charResultante = Convert.ToChar(ByteObtenido);
-                                    
-                                }
-
-
-
-
-
-
-                                for (int i = 0; i < Binario.Length; i++)
-                                {
-                                    ListaDeDecimalesFlotantes.Add(Binario[i]);
-                                }
-
-                                foreach (var item in ListaDeDecimalesFlotantes)
-                                {
-                                    numRetenido = numRetenido + Convert.ToString(item);
-                                    try
-                                    {
-                                        if (ContadordeCaracteres != 0)
-                                        {
-                                            writer.Write(DiccionarioDescompresion[numRetenido]);
-                                            numRetenido = "";
-                                            ContadordeCaracteres--;
-                                        }
-                                    }
-                                    catch (Exception)
-                                    { }
-                                }
-                                ListaDeDecimalesFlotantes.Clear();
+                                byteLeido = "0" + byteLeido;
                             }
                         }
+                        else
+                        {
+                            while (byteLeido.Length < 8)
+                            {
+                                byteLeido = "0" + byteLeido;
+                            }
+                        }
+
+                        byteAnalizado += byteLeido;
+                        if (Convert.ToInt32(TamanoBits) > 8)
+                        {
+                            if (byteAnalizado.Length >= Convert.ToInt32(TamanoBits))
+                            {
+                                var caracterComprimido = string.Empty;
+                                for (int i = 0; i < Convert.ToInt32(TamanoBits); i++)
+                                {
+                                    caracterComprimido += byteAnalizado[i];
+                                }
+                                listaCaracteresComprimidos.Add(Convert.ToInt32(caracterComprimido, 2));
+                                byteAnalizado = byteAnalizado.Substring(Convert.ToInt32(TamanoBits));
+                            }
+                        }
+                        else
+                        {
+                            listaCaracteresComprimidos.Add(Convert.ToInt32(byteAnalizado, 2));
+                            byteAnalizado = string.Empty;
+                        }
                     }
+
+
                 }
-
-
-
+        
             }
             else
             {
