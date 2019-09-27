@@ -85,8 +85,8 @@ namespace Lab1_ED2.Controllers
                             var caractreres = Convert.ToChar(item);
                             DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
                         }
-                        var A = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
-                        writer.Write(A.ToCharArray());
+                        var TamanoDiccionario = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
+                        writer.Write(TamanoDiccionario.ToCharArray());
                         foreach (var item in listaCaracteresExistentes)
                         {
                             var Indice = Convert.ToByte(item);
@@ -183,110 +183,145 @@ namespace Lab1_ED2.Controllers
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
             var NombreNuevoArchivo = "";
             var ExtensionNuevoArchivo = "";
-            if (ArchivoImportado != null && extension == ".lzw")
+            if (ArchivoImportado != null)
             {
                 archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
-                var NombreDelArchivo = Path.GetFileNameWithoutExtension(ArchivoImportado.Filename);
+                var extension = Path.GetExtension(ArchivoImportado.FileName);
                 ArchivoImportado.SaveAs(archivoLeer);
                 var Metadata = string.Empty;
                 var CantidadCaracteresCOnvertir = string.Empty;
                 var DiccionarioText = string.Empty;
                 var DiccionarioCaracteres = new Dictionary<int, string>();
                 var byteBuffer = new byte[bufferLength];
-                using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
+                if (extension == ".lzw")
                 {
-                    //var ContadorDiccionario = 1;
-                    var CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                    var TamanoDiccionario = string.Empty;
-                    while (CaracterDiccionario != '.')
+                    using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
                     {
-                        TamanoDiccionario += CaracterDiccionario;
-                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                    }
-                    CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
-                    while (DiccionarioCaracteres.LongCount() != Convert.ToInt64(TamanoDiccionario))
-                    {
-                        var A = Lectura.ReadByte();
-                        if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(A))))
+                        //var ContadorDiccionario = 1;
+                        var CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        var TamanoDiccionario = string.Empty;
+                        while (CaracterDiccionario != '.')
                         {
-                            DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, Convert.ToString(Convert.ToChar(A)));
-                            //ContadorDiccionario++;
+                            TamanoDiccionario += CaracterDiccionario;
+                            CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         }
-                    }
-                    Lectura.ReadByte();
-                    Lectura.ReadByte();
-                    Lectura.ReadByte();
-                    CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                    var TamanoBits = string.Empty;
-                    var extensionArchivo = string.Empty;
-                    while (CaracterDiccionario != '.')
-                    {
-                        TamanoBits += CaracterDiccionario;
-                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                    }
-                    CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                    while (CaracterDiccionario != '\u0002')
-                    {
-                        extensionArchivo += CaracterDiccionario;
-                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                    }
-                    extensionArchivo = "." + extensionArchivo;
-                    var byteAnalizado = string.Empty;
-                    var listaCaracteresComprimidos = new List<int>();
-                    Lectura.ReadByte();
-                    Lectura.ReadByte();
-                    while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
-                    {
-                        var byteLeido = Convert.ToString(Lectura.ReadByte(), 2);
-                        if (Lectura.BaseStream.Position == Lectura.BaseStream.Length)
+                        CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
+                        while (DiccionarioCaracteres.LongCount() != Convert.ToInt64(TamanoDiccionario))
                         {
-                            while (byteLeido.Length < 7)
+                            var A = Lectura.ReadByte();
+                            if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(A))))
                             {
-                                byteLeido = "0" + byteLeido;
+                                DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, Convert.ToString(Convert.ToChar(A)));
+                                //ContadorDiccionario++;
                             }
                         }
-                        else
+                        Lectura.ReadByte();
+                        Lectura.ReadByte();
+                        Lectura.ReadByte();
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        var TamanoBits = string.Empty;
+                        var extensionArchivo = string.Empty;
+                        while (CaracterDiccionario != '.')
                         {
-                            while (byteLeido.Length < 8)
-                            {
-                                byteLeido = "0" + byteLeido;
-                            }
+                            TamanoBits += CaracterDiccionario;
+                            CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         }
-
-                        byteAnalizado += byteLeido;
-                        if (Convert.ToInt32(TamanoBits) > 8)
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        while (CaracterDiccionario != '\u0002')
                         {
-                            if (byteAnalizado.Length >= Convert.ToInt32(TamanoBits))
+                            extensionArchivo += CaracterDiccionario;
+                            CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        }
+                        extensionArchivo = "." + extensionArchivo;
+                        var byteAnalizado = string.Empty;
+                        var listaCaracteresComprimidos = new List<int>();
+                        Lectura.ReadByte();
+                        Lectura.ReadByte();
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                        {
+                            var byteLeido = Convert.ToString(Lectura.ReadByte(), 2);
+                            if (Lectura.BaseStream.Position == Lectura.BaseStream.Length)
                             {
-                                var caracterComprimido = string.Empty;
-                                for (int i = 0; i < Convert.ToInt32(TamanoBits); i++)
+                                while (byteLeido.Length < 7)
                                 {
-                                    caracterComprimido += byteAnalizado[i];
+                                    byteLeido = "0" + byteLeido;
                                 }
-                                listaCaracteresComprimidos.Add(Convert.ToInt32(caracterComprimido, 2));
-                                byteAnalizado = byteAnalizado.Substring(Convert.ToInt32(TamanoBits));
+                            }
+                            else
+                            {
+                                while (byteLeido.Length < 8)
+                                {
+                                    byteLeido = "0" + byteLeido;
+                                }
+                            }
+
+                            byteAnalizado += byteLeido;
+                            if (Convert.ToInt32(TamanoBits) > 8)
+                            {
+                                if (byteAnalizado.Length >= Convert.ToInt32(TamanoBits))
+                                {
+                                    var caracterComprimido = string.Empty;
+                                    for (int i = 0; i < Convert.ToInt32(TamanoBits); i++)
+                                    {
+                                        caracterComprimido += byteAnalizado[i];
+                                    }
+                                    listaCaracteresComprimidos.Add(Convert.ToInt32(caracterComprimido, 2));
+                                    byteAnalizado = byteAnalizado.Substring(Convert.ToInt32(TamanoBits));
+                                }
+                            }
+                            else
+                            {
+                                listaCaracteresComprimidos.Add(Convert.ToInt32(byteAnalizado, 2));
+                                byteAnalizado = string.Empty;
                             }
                         }
-                        else
+                        var primerCaracter = DiccionarioCaracteres[listaCaracteresComprimidos[0]];
+                        listaCaracteresComprimidos.RemoveAt(0);
+                        var decompressed = new System.Text.StringBuilder(primerCaracter);
+                        using (var ArchivoNuevo = new FileStream(Server.MapPath(@"~/App_Data/Descompresiones/" + NombreNuevoArchivo + extensionArchivo), FileMode.OpenOrCreate))
                         {
-                            listaCaracteresComprimidos.Add(Convert.ToInt32(byteAnalizado, 2));
-                            byteAnalizado = string.Empty;
+                            using (var writer = new StreamWriter(ArchivoNuevo))
+                            {
+                                foreach (var item in listaCaracteresComprimidos)
+                                {
+                                    var cadenaAnalizada = string.Empty;
+                                    if (DiccionarioCaracteres.ContainsKey(item))
+                                    {
+                                        cadenaAnalizada = DiccionarioCaracteres[item];
+                                    }
+                                    else if (item == DiccionarioCaracteres.Count + 1)
+                                    {
+                                        cadenaAnalizada = primerCaracter + primerCaracter[0];
+                                    }
+                                    decompressed.Append(cadenaAnalizada);
+                                    DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, primerCaracter + cadenaAnalizada[0]);
+                                    primerCaracter = cadenaAnalizada;
+                                }
+                                writer.Write(decompressed.ToString());
+                            }
                         }
                     }
-
-
                 }
-        
-            }
             else
             {
-                Danger("No se puede descomprimir.", true);
+                Danger("Formato de archivo no es '.lzw'", true);
             }
-            var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
-            //return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
-
-            return View();
         }
+        else
+        {
+               Danger("El archivo es nulo.", true);
+        }
+        var FileVirtualPath = @"~/App_Data/Descompresiones/" + NombreNuevoArchivo + ExtensionNuevoArchivo;
+           //return File(FileVirtualPath, "application / force - download", Path.GetFileName(FileVirtualPath));
+           return View();
+        }
+
+
+
+
+
+
+
         public ActionResult CompresionHImportar()
         {
             return View();
