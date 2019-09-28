@@ -84,6 +84,8 @@ namespace Lab1_ED2.Controllers
                             var caractreres = Convert.ToChar(item);
                             DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
                         }
+                        var TamanoDiccionario = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
+                        writer.Write(TamanoDiccionario.ToCharArray());
                         Lectura.BaseStream.Position = 0;
                         var CaracterActual = string.Empty;
                         var Output = string.Empty;
@@ -202,15 +204,22 @@ namespace Lab1_ED2.Controllers
                     using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
                     {
                         var CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                        var CantidadCaracteres = string.Empty;
+                        var CantidadCaracteresDiccionatrio = string.Empty;
                         while (CaracterDiccionario != '.')
                         {
-                            CantidadCaracteres += CaracterDiccionario;
+                            CantidadCaracteresDiccionatrio += CaracterDiccionario;
+                            CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        }
+                        var CantidadTexto = string.Empty;
+                        CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
+                        while (CaracterDiccionario != '.')
+                        {
+                            CantidadTexto += CaracterDiccionario;
                             CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         }
                         CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
                         var byteEscrito = Lectura.ReadByte();
-                        while (byteEscrito != '\u0002')
+                        while (DiccionarioCaracteres.Count!=Convert.ToInt32(CantidadCaracteresDiccionatrio))
                         {
                             if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(byteEscrito))))
                             {
@@ -238,7 +247,7 @@ namespace Lab1_ED2.Controllers
                         var listaCaracteresComprimidos = new List<int>();
                         Lectura.ReadByte();
                         Lectura.ReadByte();
-                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length && listaCaracteresComprimidos.Count < Convert.ToInt32(CantidadCaracteres))
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length && listaCaracteresComprimidos.Count<Convert.ToInt32(CantidadTexto))
                         {
                             var byteLeido = Convert.ToString(Lectura.ReadByte(), 2);
                             while (byteLeido.Length < 8)
