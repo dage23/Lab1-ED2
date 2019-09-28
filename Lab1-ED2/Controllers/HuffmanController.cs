@@ -84,14 +84,6 @@ namespace Lab1_ED2.Controllers
                             var caractreres = Convert.ToChar(item);
                             DiccionarioLZWCompresion.Add(caractreres.ToString(), DiccionarioLZWCompresion.Count + 1);
                         }
-                        var TamanoDiccionario = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
-                        writer.Write(TamanoDiccionario.ToCharArray());
-                        foreach (var item in listaCaracteresExistentes)
-                        {
-                            var Indice = Convert.ToByte(item);
-                            writer.Write(Indice);
-                        }
-                        writer.Write(Environment.NewLine);
                         Lectura.BaseStream.Position = 0;
                         var CaracterActual = string.Empty;
                         var Output = string.Empty;
@@ -113,6 +105,15 @@ namespace Lab1_ED2.Controllers
                                 }
                             }
                         }
+                        listaCaracteresEscribir.Add(DiccionarioLZWCompresion[CaracterActual]);
+                        var TamanoTexto = Convert.ToString(DiccionarioLZWCompresion.LongCount()) + ".";
+                        writer.Write(TamanoTexto.ToCharArray());
+                        foreach (var item in listaCaracteresExistentes)
+                        {
+                            var Indice = Convert.ToByte(item);
+                            writer.Write(Indice);
+                        }
+                        writer.Write(Environment.NewLine);
                         var mayorIndice = listaCaracteresEscribir.Max();
                         var bitsMayorIndice = (Convert.ToString(mayorIndice, 2)).Count();
                         writer.Write(bitsMayorIndice.ToString().ToCharArray());
@@ -148,7 +149,7 @@ namespace Lab1_ED2.Controllers
                                     }
                                 }
                             }
-                            if (cadenaBits.Length>0)
+                            if (cadenaBits.Length > 0)
                             {
                                 var cadenaRestante = Convert.ToInt64(cadenaBits, 2);
                                 writer.Write(Convert.ToByte(cadenaRestante));
@@ -158,8 +159,7 @@ namespace Lab1_ED2.Controllers
                         {
                             foreach (var item in listaCaracteresEscribir)
                             {
-                                var ByteAGuardar = Convert.ToByte(item);
-                                writer.Write(ByteAGuardar);              
+                                writer.Write(Convert.ToByte(Convert.ToInt32(item)));
                             }
                         }
                         PropiedadesArchivoActual.TamanoArchivoComprimido = writeStream.Length;
@@ -184,49 +184,44 @@ namespace Lab1_ED2.Controllers
         {
             Directory.CreateDirectory(Server.MapPath("~/App_Data/ArchivosImportados/"));
             Directory.CreateDirectory(Server.MapPath("~/App_Data/Descompresiones/"));
-            var archivoLeer = string.Empty;
+            var DireccionArchivo = string.Empty;
             var ArchivoMapeo = Server.MapPath("~/App_Data/ArchivosImportados/");
-            var ExtensionNuevoArchivo = string.Empty;
             var extensionArchivo = string.Empty;
             if (ArchivoImportado != null)
             {
-                archivoLeer = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
+                DireccionArchivo = ArchivoMapeo + Path.GetFileName(ArchivoImportado.FileName);
                 var extension = Path.GetExtension(ArchivoImportado.FileName);
-                ArchivoImportado.SaveAs(archivoLeer);
-                var CantidadCaracteresCOnvertir = string.Empty;
+                ArchivoImportado.SaveAs(DireccionArchivo);
                 var DiccionarioText = string.Empty;
                 var DiccionarioCaracteres = new Dictionary<int, string>();
                 var byteBuffer = new byte[bufferLength];
-                FileInfo ArchivoAnalizado = new FileInfo(archivoLeer);
+                FileInfo ArchivoAnalizado = new FileInfo(DireccionArchivo);
                 nombreArchivo = ArchivoAnalizado.Name.Split('.')[0];
                 if (extension == ".lzw")
                 {
                     using (var Lectura = new BinaryReader(ArchivoImportado.InputStream))
                     {
-                        //var ContadorDiccionario = 1;
                         var CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
-                        var TamanoDiccionario = string.Empty;
+                        var CantidadCaracteres = string.Empty;
                         while (CaracterDiccionario != '.')
                         {
-                            TamanoDiccionario += CaracterDiccionario;
+                            CantidadCaracteres += CaracterDiccionario;
                             CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         }
                         CaracterDiccionario = Convert.ToChar(Lectura.PeekChar());
-                        while (DiccionarioCaracteres.LongCount() != Convert.ToInt64(TamanoDiccionario))
+                        var byteEscrito = Lectura.ReadByte();
+                        while (byteEscrito != '\u0002')
                         {
-                            var A = Lectura.ReadByte();
-                            if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(A))))
+                            if (!DiccionarioCaracteres.ContainsValue(Convert.ToString(Convert.ToChar(byteEscrito))))
                             {
-                                DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, Convert.ToString(Convert.ToChar(A)));
-                                //ContadorDiccionario++;
+                                DiccionarioCaracteres.Add(DiccionarioCaracteres.Count + 1, Convert.ToString(Convert.ToChar(byteEscrito)));
                             }
+                            byteEscrito = Lectura.ReadByte();
                         }
-                        Lectura.ReadByte();
                         Lectura.ReadByte();
                         Lectura.ReadByte();
                         CaracterDiccionario = Convert.ToChar(Lectura.ReadByte());
                         var TamanoBits = string.Empty;
-
                         while (CaracterDiccionario != '.')
                         {
                             TamanoBits += CaracterDiccionario;
@@ -243,24 +238,13 @@ namespace Lab1_ED2.Controllers
                         var listaCaracteresComprimidos = new List<int>();
                         Lectura.ReadByte();
                         Lectura.ReadByte();
-                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length)
+                        while (Lectura.BaseStream.Position != Lectura.BaseStream.Length && listaCaracteresComprimidos.Count < Convert.ToInt32(CantidadCaracteres))
                         {
                             var byteLeido = Convert.ToString(Lectura.ReadByte(), 2);
-                            if (Lectura.BaseStream.Position == Lectura.BaseStream.Length)
+                            while (byteLeido.Length < 8)
                             {
-                                while (byteLeido.Length < 7)
-                                {
-                                    byteLeido = "0" + byteLeido;
-                                }
+                                byteLeido = "0" + byteLeido;
                             }
-                            else
-                            {
-                                while (byteLeido.Length < 8)
-                                {
-                                    byteLeido = "0" + byteLeido;
-                                }
-                            }
-
                             byteAnalizado += byteLeido;
                             if (Convert.ToInt32(TamanoBits) > 8)
                             {
@@ -280,6 +264,10 @@ namespace Lab1_ED2.Controllers
                                 listaCaracteresComprimidos.Add(Convert.ToInt32(byteAnalizado, 2));
                                 byteAnalizado = string.Empty;
                             }
+                        }
+                        if (byteAnalizado.Length>0)
+                        {
+                            listaCaracteresComprimidos[listaCaracteresComprimidos.Count - 1] = listaCaracteresComprimidos[listaCaracteresComprimidos.Count - 1] + Convert.ToInt32(byteAnalizado, 2);
                         }
                         var primerCaracter = DiccionarioCaracteres[listaCaracteresComprimidos[0]];
                         listaCaracteresComprimidos.RemoveAt(0);
