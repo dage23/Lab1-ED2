@@ -17,8 +17,8 @@ namespace Lab1_ED2.Controllers
         public Dictionary<string, byte> DiccionarioIndices = new Dictionary<string, byte>();
         public string TextoEnBinario = "";
         public string nombreArchivo;
-        
-        
+
+
         //Vistas
         public ActionResult Menu()
         {
@@ -545,6 +545,8 @@ namespace Lab1_ED2.Controllers
             string archivoLeer = string.Empty;
             string ArchivoMapeo = Server.MapPath("~/App_Data/");
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
+            PropiedadesArchivo Prueba = new PropiedadesArchivo();
+            GuaradarCompresiones(Prueba);
             using (var Lectura = new StreamReader(archivoLeer))
             {
                 while (!Lectura.EndOfStream)
@@ -567,15 +569,19 @@ namespace Lab1_ED2.Controllers
         }
         void GuaradarCompresiones(PropiedadesArchivo Archivo)
         {
+
             string archivoLeer = string.Empty;
             string ArchivoMapeo = Server.MapPath("~/App_Data/");
             archivoLeer = ArchivoMapeo + Path.GetFileName("ListaCompresiones");
             using (var writer = new StreamWriter(archivoLeer, true))
             {
-                writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion + "|" + Archivo.FormatoCompresion);
+                if (!(Archivo.TamanoArchivoComprimido <= 0 && Archivo.TamanoArchivoDescomprimido <= 0))
+                {
+                    writer.WriteLine(Archivo.NombreArchivoOriginal + "|" + Archivo.TamanoArchivoDescomprimido + "|" + Archivo.TamanoArchivoComprimido + "|" + Archivo.FactorCompresion + "|" + Archivo.RazonCompresion + "|" + Archivo.PorcentajeReduccion + "|" + Archivo.FormatoCompresion);
+                }
             }
+
         }
-       
     }
 }
 
